@@ -1,0 +1,14 @@
+{
+	"folders":
+	[
+		{
+			"path": "/Users/jahferh/gocode/src/bitbucket.org/jahfer/flux-middleman"
+		}
+	],
+	"settings":
+	{
+		"go_project": true,
+		"main": "src/main.go",
+		"name": "goflux"
+	}
+}
