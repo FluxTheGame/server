@@ -3,7 +3,6 @@ package network
 import (
 	"bitbucket.org/jahfer/flux-middleman/client"
 	"bitbucket.org/jahfer/flux-middleman/events"
-	"bitbucket.org/jahfer/flux-middleman/packet"
 	"bitbucket.org/jahfer/flux-middleman/team"
 	"code.google.com/p/go.net/websocket"
 	"net"
@@ -22,19 +21,19 @@ func Init() {
 	go Manager.Listener()
 
 	for {
-		msg := packet.Out{
+		/*msg := packet.Out{
 			Name:    "server:heartbeat",
 			Message: "Heartbeat " + time.Now().Format(time.StampMilli),
 		}
 		WsClients.Broadcast <- msg
-		TcpClients.Broadcast <- msg
+		TcpClients.Broadcast <- msg*/
 		time.Sleep(1000 * time.Millisecond)
 		//fmt.Println(WsClients.NumUsers(), "users connected")
 	}
 }
 
 func wsHandler(ws *websocket.Conn) {
-	fmt.Println("-- ws client connected")
+	fmt.Println("-- Hello Sencha User!")
 
 	c := &client.WebSocketClient{Conn: ws}
 	c.Send = make(chan []byte, 256)
@@ -46,7 +45,7 @@ func wsHandler(ws *websocket.Conn) {
 }
 
 func tcpHandler(conn net.Conn) {
-	fmt.Println("-- tcp client connected")
+	fmt.Println("-- Hello TCP Client!")
 
 	c := &client.TcpClient{Conn: conn}
 	c.Send = make(chan []byte, 256)

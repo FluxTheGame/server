@@ -2,6 +2,7 @@ package events
 
 import (
 	"encoding/json"
+	"io"
 	"bitbucket.org/jahfer/flux-middleman/packet"
 	"bitbucket.org/jahfer/flux-middleman/user"
 )
@@ -9,6 +10,7 @@ import (
 type Event struct {
 	Name string          `json:"name"`
 	Args json.RawMessage `json:"args"`
+	Sender io.Writer
 }
 
 type Manager struct {
@@ -44,6 +46,7 @@ func (em *Manager) Listener() {
 			panic(err.Error())
 		}
 		evt := e[0]
+		evt.Sender = p.Sender
 
 		if callback, exists := em.handlers[evt.Name]; exists {
 			callback(evt)
@@ -54,10 +57,10 @@ func (em *Manager) Listener() {
 type eventHandlerFunc func(e Event)
 
 // generates wrapper so that functions can manage a generic event
-func Handler(fn func(user user.User)) eventHandlerFunc {
+func Handler(fn func(e user.Id)) eventHandlerFunc {
 	return func(e Event) {
 
-		user := user.User{}
+		user := user.Id{}
 
 		if err := json.Unmarshal(e.Args, &user); err != nil {
 			panic(err.Error())

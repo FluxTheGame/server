@@ -1,7 +1,8 @@
 package user
 
-import (
-)
+type Id struct {
+	Id int `json:"id"`
+}
 
 type User struct {
 	Name string `json:"name"`

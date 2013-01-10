@@ -11,7 +11,7 @@
 			var ws = new WebSocket("ws://localhost:8080/");
 			ws.onopen = function() {
 				// Send a message.
-				ws.send('[{"name": "user:join", "args": {"id": 3, "x": 13, "y": 306}}]');  
+				ws.send('[{"name": "user:join", "args": {"id": 3, "x": 13, "y": 306}}]');
 				ws.send('[{"name": "user:bloat", "args": {"id": 3}}]');
 			};
 			ws.onmessage = function(e) {

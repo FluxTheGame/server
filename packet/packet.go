@@ -7,7 +7,7 @@ import (
 
 type In struct {
 	Raw []byte
-	Sender io.WriteCloser
+	Sender io.Writer
 }
 
 type Out struct {

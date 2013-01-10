@@ -6,6 +6,8 @@ import (
 	"math"
 )
 
+var LastId int = 0
+
 type Team struct {
 	Id int
 	Members []user.User
@@ -59,7 +61,9 @@ func (t *TeamHub) Run() {
 		select {
 		// add new client
 		case c := <-t.Register:
-			t.Hubs[0].Register <- c
+			hub := t.getNextHub()
+			hub.Register <- c
+			LastId++
 		// lost connection with client
 		case c := <-t.Unregister:
 			t.Hubs[0].Unregister <- c
@@ -69,4 +73,9 @@ func (t *TeamHub) Run() {
 			}
 		}
 	}
+}
+
+// Find a hub to place the 
+func (t *TeamHub) getNextHub() client.Hub {
+	return t.Hubs[0]
 }

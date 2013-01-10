@@ -76,7 +76,7 @@ func (c *TcpClient) reflectValue(v reflect.Value) []byte {
 			f := v.Field(i)
 			output += fmt.Sprintf("/%s=%v", kind.Field(i).Name, f.Interface())
 		}
-		output += "$\n"
+		output += "$"//\n
 		return []byte(output)
 	case reflect.Interface, reflect.Ptr:
 		if v.IsNil() {
@@ -110,7 +110,7 @@ func (c *TcpClient) Sender() {
 	for message := range c.Send {
 		// TODO: add event emmiting
 
-		fmt.Println("[TCP] <- " + string(message))
+		//fmt.Printf("[TCP]\t<- " + string(message) + "\n")
 		_, err := c.Conn.Write(message)
 		if err != nil {
 			fmt.Println("Send failed. Closing TCP client...")
