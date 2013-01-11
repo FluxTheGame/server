@@ -15,7 +15,9 @@ import (
  * Client Interface
  * ======================================*/
 type Client interface {
+	// Send data to client
 	io.WriteCloser
+	// Translate from struct to specified format
 	Format(v interface{}) []byte
 }
 
@@ -23,7 +25,7 @@ type Client interface {
  * Generic Client 
  * ======================================*/
 type genericClient struct {
-	Conn io.ReadWriteCloser
+	Conn io.WriteCloser
 	Send chan []byte
 }
 
@@ -44,6 +46,7 @@ func (c *genericClient) Close() error {
 	return nil
 }
 
+// By default, we just assume everything is going to be JSON
 func (c *genericClient) Format(v interface{}) []byte {
 	data, err := json.Marshal(v)
 	if err != nil {
@@ -60,11 +63,13 @@ type TcpClient struct {
 	Conn net.Conn
 }
 
+// TCP client isn't JSON! :O
 func (c *TcpClient) Format(v interface{}) []byte {
 	ref := reflect.ValueOf(&v)
 	return c.reflectValue(ref)
 }
 
+// Lets take a look inside the object, and format it how we'd like
 func (c *TcpClient) reflectValue(v reflect.Value) []byte {
 
 	kind := v.Type()
@@ -78,11 +83,13 @@ func (c *TcpClient) reflectValue(v reflect.Value) []byte {
 		}
 		output += "$"//\n
 		return []byte(output)
+	// Lets try it again, using the elements inside
 	case reflect.Interface, reflect.Ptr:
 		if v.IsNil() {
 			return []byte("Null")
 		}
 		return c.reflectValue(v.Elem())
+	// Don't send me a non-struct!
 	default:
 		panic(v.Kind())
 	}
@@ -90,6 +97,7 @@ func (c *TcpClient) reflectValue(v reflect.Value) []byte {
 	return []byte("???")
 }
 
+// Always have to keep an eye out for creepers...
 func (c *TcpClient) Listener(incoming chan packet.In) {
 	for {
 		buffer := make([]byte, 1024)
@@ -106,11 +114,9 @@ func (c *TcpClient) Listener(incoming chan packet.In) {
 	c.Conn.Close()
 }
 
+// Oh, you want to send something out? Fiiiiine...
 func (c *TcpClient) Sender() {
 	for message := range c.Send {
-		// TODO: add event emmiting
-
-		//fmt.Printf("[TCP]\t<- " + string(message) + "\n")
 		_, err := c.Conn.Write(message)
 		if err != nil {
 			fmt.Println("Send failed. Closing TCP client...")
@@ -128,14 +134,7 @@ type WebSocketClient struct {
 	Conn *websocket.Conn
 }
 
-func (c *WebSocketClient) Format(v interface{}) []byte {
-	data, err := json.Marshal(v)
-	if err != nil {
-		panic(err.Error())
-	}
-	return data
-}
-
+// Catch any traffic directed this way
 func (c *WebSocketClient) Listener(incoming chan packet.In) {
 	for {
 		var event string
@@ -151,6 +150,7 @@ func (c *WebSocketClient) Listener(incoming chan packet.In) {
 	c.Conn.Close()
 }
 
+// Dispatch data sent into the connection
 func (c *WebSocketClient) Sender() {
 	for message := range c.Send {
 

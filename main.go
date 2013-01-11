@@ -1,7 +1,9 @@
 package main
 
 /* ----| TODO ----------------- */
-// Disconnection event to XNA
+// 1. Logic for team sorting
+// 2. Disconnection event to XNA
+// 3. Dispatch events for incoming TCP packet
 
 import (
 	"bitbucket.org/jahfer/flux-middleman/events"

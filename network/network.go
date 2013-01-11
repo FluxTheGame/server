@@ -11,10 +11,13 @@ import (
 	"fmt"
 )
 
-var WsClients = team.NewHub()
-var TcpClients = client.NewHub()
-var Manager = events.NewManager()
+// Create objects to store all connections
+var WsClients 	= team.NewHub() // sencha users
+var TcpClients 	= client.NewHub() // xna
+// Create event manager for dispatches
+var Manager 	= events.NewManager()
 
+// Boot cycle for servers
 func Init() {
 	go initTcpServer()
 	go initSocketServer()
@@ -32,30 +35,39 @@ func Init() {
 	}
 }
 
+// Called on every new WebSocket connection
 func wsHandler(ws *websocket.Conn) {
 	fmt.Println("-- Hello Sencha User!")
 
+	// create client object
 	c := &client.WebSocketClient{Conn: ws}
 	c.Send = make(chan []byte, 256)
+	
+	/* todo: defer unregistration from specified hub */
 
+	// register client in list, and boot up to read/write
 	WsClients.Register <- c
 	defer func() { WsClients.Unregister <- c }()
 	go c.Sender()
 	c.Listener(Manager.Incoming)
 }
 
+// Called on every new TCP connection
 func tcpHandler(conn net.Conn) {
 	fmt.Println("-- Hello TCP Client!")
 
+	// create client object
 	c := &client.TcpClient{Conn: conn}
 	c.Send = make(chan []byte, 256)
 
+	// register client in list, and boot up to read/write
 	TcpClients.Register <- c
 	defer func() { TcpClients.Unregister <- c }()
 	go c.Sender()
 	c.Listener(Manager.Incoming)
 }
 
+// Start the HTTP/WS server to listen for new connections
 func initSocketServer() {
 	fmt.Println("-- Initializing WS server on :8080")
 
@@ -71,6 +83,7 @@ func initSocketServer() {
 	}
 }
 
+// Start the TCP server and listen for new connections
 func initTcpServer() {
 	fmt.Println("-- Initializing TCP server on :8100")
 
