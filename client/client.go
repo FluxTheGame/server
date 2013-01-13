@@ -136,6 +136,9 @@ type WebSocketClient struct {
 
 // Catch any traffic directed this way
 func (c *WebSocketClient) Listener(incoming chan packet.In) {
+
+	defer func(){ c.Conn.Close() }()
+
 	for {
 		var event string
 		err := websocket.Message.Receive(c.Conn, &event)
@@ -147,7 +150,10 @@ func (c *WebSocketClient) Listener(incoming chan packet.In) {
 		packet := packet.In{Raw: []byte(event), Sender: c}
 		incoming <- packet
 	}
-	c.Conn.Close()
+
+	deadPacket := packet.In{Raw: nil, Sender: c}
+	fmt.Println("Client broke connection...", deadPacket)
+	incoming <- deadPacket
 }
 
 // Dispatch data sent into the connection

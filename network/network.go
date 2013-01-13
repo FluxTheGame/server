@@ -3,7 +3,7 @@ package network
 import (
 	"bitbucket.org/jahfer/flux-middleman/client"
 	"bitbucket.org/jahfer/flux-middleman/events"
-	"bitbucket.org/jahfer/flux-middleman/team"
+	//"bitbucket.org/jahfer/flux-middleman/team"
 	"code.google.com/p/go.net/websocket"
 	"net"
 	"net/http"
@@ -12,7 +12,7 @@ import (
 )
 
 // Create objects to store all connections
-var WsClients 	= team.NewHub() // sencha users
+var WsClients 	= client.NewHub() // sencha users
 var TcpClients 	= client.NewHub() // xna
 // Create event manager for dispatches
 var Manager 	= events.NewManager()
@@ -24,26 +24,15 @@ func Init() {
 	go Manager.Listener()
 
 	for {
-		/*msg := packet.Out{
-			Name:    "server:heartbeat",
-			Message: "Heartbeat " + time.Now().Format(time.StampMilli),
-		}
-		WsClients.Broadcast <- msg
-		TcpClients.Broadcast <- msg*/
 		time.Sleep(1000 * time.Millisecond)
-		//fmt.Println(WsClients.NumUsers(), "users connected")
 	}
 }
 
 // Called on every new WebSocket connection
 func wsHandler(ws *websocket.Conn) {
-	fmt.Println("-- Hello Sencha User!")
-
 	// create client object
 	c := &client.WebSocketClient{Conn: ws}
 	c.Send = make(chan []byte, 256)
-	
-	/* todo: defer unregistration from specified hub */
 
 	// register client in list, and boot up to read/write
 	WsClients.Register <- c
@@ -54,8 +43,6 @@ func wsHandler(ws *websocket.Conn) {
 
 // Called on every new TCP connection
 func tcpHandler(conn net.Conn) {
-	fmt.Println("-- Hello TCP Client!")
-
 	// create client object
 	c := &client.TcpClient{Conn: conn}
 	c.Send = make(chan []byte, 256)

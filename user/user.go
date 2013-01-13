@@ -1,5 +1,6 @@
 package user
 
+
 type Id struct {
 	Id int `json:"id"`
 }
@@ -13,4 +14,13 @@ type Coords struct {
 	Id int `json:"id"`
 	X  int `json:"x"`
 	Y  int `json:"y"`
+}
+
+
+var lastId int = 0
+
+func LastId() int {
+	id := lastId
+	lastId++
+	return id
 }

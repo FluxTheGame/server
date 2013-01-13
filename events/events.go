@@ -5,6 +5,7 @@ import (
 	"io"
 	"bitbucket.org/jahfer/flux-middleman/packet"
 	"bitbucket.org/jahfer/flux-middleman/user"
+	"fmt"
 )
 
 type Event struct {
@@ -33,20 +34,28 @@ func NewManager() Manager {
 
 // execute stored callbacks for each event received
 func (em *Manager) Listener() {
-	for p := range em.Incoming {
+	for pkt := range em.Incoming {
 
 		/*
 		 unmarshal all incoming packets here
 		 then dispatch in event format
 		*/
 
+		if pkt.Raw == nil {
+			fmt.Println("Found dead connection!")
+			if callback, exists := em.handlers["disconnect"]; exists {
+				callback(Event{ Name:"disconnect", Sender: pkt.Sender })
+			}
+			continue
+		}
+
 		var e []Event
 
-		if err := packet.Unmarshal(p.Raw, &e); err != nil {
+		if err := packet.Unmarshal(pkt.Raw, &e); err != nil {
 			panic(err.Error())
 		}
 		evt := e[0]
-		evt.Sender = p.Sender
+		evt.Sender = pkt.Sender
 
 		if callback, exists := em.handlers[evt.Name]; exists {
 			callback(evt)

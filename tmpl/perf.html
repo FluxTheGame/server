@@ -1,0 +1,36 @@
+<html>
+	<head>
+		<title>Performance Snapshot | Flux Server</title>
+		<style type="text/css">
+			body {
+				font-family: monospace;
+			}
+			dt {
+				float: left;
+				font-weight: bold;
+				width: 100px;
+				clear: both;
+			}
+			dl {
+				line-height: 1.5em;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>Performance Snapshot</h1>
+
+		<dl>
+			<h2>Number of Connections</h2>
+			<dt>WebSocket</dt>
+				<dd>{{.WsNumConn}}</dd>
+			<dt>TCP</dt>
+				<dd>{{.TcpNumConn}}</dd>
+			<dt>Teams</dt>
+				<dd>{{.NumTeams}}</dd>
+			<dt>In Queue</dt>
+				<dd>{{.NumInQueue}}</dd>
+			<dt>Active</dt>
+				<dd>{{.NumActive}}</dd>
+		</dl>
+	</body>
+</html>

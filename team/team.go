@@ -1,107 +1,115 @@
 package team
 
 import (
-	"bitbucket.org/jahfer/flux-middleman/user"
-	"bitbucket.org/jahfer/flux-middleman/client"
 	"math"
 	"fmt"
+	"io"
 )
 
-var LastId int = 0
+var lastId int = 0
 
-type Team struct {
+func LastId() int {
+	id := lastId
+	lastId++
+	return id
+}
+
+type Member struct {
 	Id int
-	Members []user.User
+	teamId int
+	Conn io.Writer
 }
 
-// Manages all of the teams
-type TeamHub struct {
-	Hubs []client.Hub
-	Broadcast chan interface{}
-	Register chan client.Client
-	Unregister chan client.Client
+type Manager struct {
+	Roster [][]Member // list of team ids and members per team
+	Queue chan Member // user ids
+	Unregister chan io.Writer
 }
 
-// Generate new TeamHub
-func NewHub() TeamHub {
-	t := TeamHub{ 
-		Hubs: make([]client.Hub, 256),
-		Broadcast:  make(chan interface{}),
-		Register:   make(chan client.Client),
-		Unregister: make(chan client.Client),
+func NewManager() Manager {
+	return Manager{
+		Roster: make([][]Member, 1),
+		Queue: make(chan Member),
+		Unregister: make(chan io.Writer),
 	}
-	t.Hubs[0] = client.NewHub()
-
-	return t
 }
+
 
 // Shows number of open connections, not logged-in users
-func (t TeamHub) NumUsers() int {
-	var count int
+func (t Manager) NumUsers() int {
+	count := 0
 
-	for _, h := range t.Hubs {
-		count += h.NumClients()
+	for _, m := range t.Roster {
+		count += len(m)
 	}
 
 	return count
 }
 
-func (t TeamHub) MaxTeams() int {
+func (t Manager) MaxTeams() int {
 	userCount := float64(t.NumUsers())
 	max := math.Ceil( math.Sqrt(userCount) )
 	return int(max)
 }
 
-func (t *TeamHub) Sort() {
-
-}
-
 // Boot cycle for team manager
-func (t *TeamHub) Run() {
-	for _, h := range t.Hubs {
-		// make sure all the team collections are running (aka 1 at init)
-		go h.Run()
-	}
+func (t *Manager) Run() {
+
+	t.Roster[0] = []Member{}
 
 	for {
 		select {
-
 		// add new client
-		case c := <-t.Register:
-			hub := t.getNextHub()
-			/* todo: logic for hub sorting */
-			hub.Register <- c
-			LastId++
+		case member := <-t.Queue:
+			// register client to team
+			t.add(member)
+		
+		// user has disconnected
+		case deadClient := <-t.Unregister:
+			// for all teams
+			for i, team := range t.Roster {
+				// for all members
+				for j, m := range team {
+					// if this is the disconnected member
+					if m.Conn == deadClient {
+						// move last elem to i-th position
+						// to replace dead index
+  						fmt.Println("Before:", t.Roster)
+						team[j] = team[len(team)-1]
+  						t.Roster[i] = team[0:len(team)-1]
+  						fmt.Println("After: ", t.Roster)
 
-		// lost connection with client
-		case c := <-t.Unregister:
-			/* todo: dynamically find hub associated with connection…a map perhaps? */
-			t.Hubs[0].Unregister <- c
+  						// if team is now empty...
+  						if len(t.Roster[i]) < 1 {
+  							// remove!
+  							t.Roster[i] = t.Roster[len(t.Roster)-1]
+							t.Roster = t.Roster[0:len(t.Roster)-1]
+  						}
 
-		// send message to all phones
-		case msg := <-t.Broadcast:
-			for _, h := range t.Hubs {
-				h.Broadcast <- msg
+						break
+					}
+				}
 			}
-
 		}
 	}
 }
 
-// Find a hub to place the currently-queued player
-func (t *TeamHub) getNextHub() client.Hub {
+func (t *Manager) add(m Member) {
 
-	var h client.Hub
-
-	if len(t.Hubs) < t.MaxTeams() {
-		fmt.Println("Creating a new hub...")
-		h = t.Hubs[len(t.Hubs)]
-		h = client.NewHub()
+	if len(t.Roster) < t.MaxTeams() {
+		// create a new collector
+		m.teamId = len(t.Roster)
+		t.Roster = append(t.Roster, []Member{m})
 	} else {
-		fmt.Println("Adding users to existing hub...")
-		h = t.Hubs[0]
+		// add users to existing collection
+		smallest := 0
+		for i, team := range t.Roster {
+			if len(team) < len(t.Roster[smallest]) {
+				smallest = i
+			}
+		}
+		m.teamId = smallest
+		t.Roster[smallest] = append(t.Roster[smallest], m)
 	}
 
-	fmt.Println(len(t.Hubs), "hubs active")
-	return h
 }
