@@ -5,7 +5,6 @@ import (
 	"io"
 	"bitbucket.org/jahfer/flux-middleman/packet"
 	"bitbucket.org/jahfer/flux-middleman/user"
-	"fmt"
 )
 
 type Event struct {
@@ -42,7 +41,6 @@ func (em *Manager) Listener() {
 		*/
 
 		if pkt.Raw == nil {
-			fmt.Println("Found dead connection!")
 			if callback, exists := em.handlers["disconnect"]; exists {
 				callback(Event{ Name:"disconnect", Sender: pkt.Sender })
 			}

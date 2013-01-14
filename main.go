@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"runtime"
 )
 
 const DIR_TMPL = "tmpl/"
@@ -27,17 +28,21 @@ var teams = team.NewManager()
 func perfHandler(w http.ResponseWriter, r *http.Request) {
 
 	data := struct {
-		WsNumConn  int
-		TcpNumConn int
-		NumTeams   int
-		NumInQueue int
-		NumActive  int
+		NumGoroutine int
+		WsNumConn    int
+		TcpNumConn   int
+		NumTeams     int
+		NumInQueue   int
+		NumActive    int
+		Teams        [][]team.Member
 	}{
-		WsNumConn:  network.WsClients.NumClients(),
-		TcpNumConn: network.TcpClients.NumClients(),
-		NumTeams:   len(teams.Roster),
-		NumInQueue: len(teams.Queue),
-		NumActive:  teams.NumUsers(),
+		NumGoroutine: runtime.NumGoroutine(),
+		WsNumConn:    network.WsClients.NumClients(),
+		TcpNumConn:   network.TcpClients.NumClients(),
+		NumTeams:     len(teams.Roster),
+		NumInQueue:   len(teams.Queue),
+		NumActive:    teams.NumUsers(),
+		Teams:        teams.Roster,
 	}
 
 	err := templates.ExecuteTemplate(w, "perf.html", data)
@@ -69,8 +74,8 @@ func onUserJoin(e events.Event) {
 		panic(err.Error())
 	}
 
-	fmt.Println("-- Join", u)
 	id := user.LastId()
+	fmt.Printf("-- Join #%d\n", id)
 
 	simpleToXna("user:join", id)
 
@@ -90,7 +95,12 @@ func onUserJoin(e events.Event) {
 }
 
 func onDisconnect(e events.Event) {
+
+	//teamId, id := teams.GetIndex(e.Sender)
+
 	teams.Unregister <- e.Sender
+
+	//simpleToXna("user:pinch", u.Id)
 }
 
 func onUserTouch(e events.Event) {

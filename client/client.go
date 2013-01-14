@@ -103,7 +103,7 @@ func (c *TcpClient) Listener(incoming chan packet.In) {
 		buffer := make([]byte, 1024)
 		_, err := c.Conn.Read(buffer)
 		if err != nil {
-			fmt.Println("Read failed. Closing TCP client...")
+			//fmt.Println("Read failed. Closing TCP client...")
 			break
 		}
 		//fmt.Println("[TCP] -> " + string(buffer[0:bytesRead]))
@@ -119,7 +119,7 @@ func (c *TcpClient) Sender() {
 	for message := range c.Send {
 		_, err := c.Conn.Write(message)
 		if err != nil {
-			fmt.Println("Send failed. Closing TCP client...")
+			//fmt.Println("Send failed. Closing TCP client...")
 			break
 		}
 	}
@@ -143,7 +143,7 @@ func (c *WebSocketClient) Listener(incoming chan packet.In) {
 		var event string
 		err := websocket.Message.Receive(c.Conn, &event)
 		if err != nil {
-			fmt.Println("Read failed. Closing WS client...")
+			//fmt.Println("Read failed. Closing WS client...")
 			break
 		}
 
@@ -152,7 +152,6 @@ func (c *WebSocketClient) Listener(incoming chan packet.In) {
 	}
 
 	deadPacket := packet.In{Raw: nil, Sender: c}
-	fmt.Println("Client broke connection...", deadPacket)
 	incoming <- deadPacket
 }
 
@@ -164,7 +163,7 @@ func (c *WebSocketClient) Sender() {
 		//fmt.Println("[WS]  <- " + msg)
 
 		if err := websocket.Message.Send(c.Conn, msg); err != nil {
-			fmt.Println("Send failed. Closing socket...")
+			//fmt.Println("Send failed. Closing socket...")
 			break
 		}
 	}

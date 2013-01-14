@@ -2,7 +2,6 @@ package team
 
 import (
 	"math"
-	"fmt"
 	"io"
 )
 
@@ -66,32 +65,36 @@ func (t *Manager) Run() {
 		
 		// user has disconnected
 		case deadClient := <-t.Unregister:
-			// for all teams
-			for i, team := range t.Roster {
-				// for all members
-				for j, m := range team {
-					// if this is the disconnected member
-					if m.Conn == deadClient {
-						// move last elem to i-th position
-						// to replace dead index
-  						fmt.Println("Before:", t.Roster)
-						team[j] = team[len(team)-1]
-  						t.Roster[i] = team[0:len(team)-1]
-  						fmt.Println("After: ", t.Roster)
 
-  						// if team is now empty...
-  						if len(t.Roster[i]) < 1 {
-  							// remove!
-  							t.Roster[i] = t.Roster[len(t.Roster)-1]
-							t.Roster = t.Roster[0:len(t.Roster)-1]
-  						}
+			teamId, id := t.GetIndex(deadClient)
 
-						break
-					}
+			if teamId != -1 {
+				t.Roster[teamId][id] = t.Roster[teamId][len(t.Roster[teamId])-1]
+				t.Roster[teamId] = t.Roster[teamId][0:len(t.Roster[teamId])-1]
+
+				// if team is now empty...and not the last team!
+				if len(t.Roster[teamId]) < 1 && len(t.Roster) > 1 {
+					// remove!
+					t.Roster[teamId] = t.Roster[len(t.Roster)-1]
+					t.Roster = t.Roster[0:len(t.Roster)-1]
 				}
 			}
 		}
 	}
+}
+
+func (t *Manager) GetIndex(conn io.Writer) (int, int) {
+	for i, team := range t.Roster {
+		// for all members
+		for j, m := range team {
+			// found disconnected member
+			if m.Conn == conn {
+				return i, j
+			}
+		}
+	}
+
+	return -1, -1
 }
 
 func (t *Manager) add(m Member) {

@@ -20,11 +20,18 @@
 		<h1>Performance Snapshot</h1>
 
 		<dl>
-			<h2>Number of Connections</h2>
+			<h2>System</h2>
+			<dt>Go Routines</dt>
+				<dd>{{.NumGoroutine}}</dd>
+		</dl>
+
+		<dl>
+			<h2>Connections</h2>
 			<dt>WebSocket</dt>
 				<dd>{{.WsNumConn}}</dd>
 			<dt>TCP</dt>
 				<dd>{{.TcpNumConn}}</dd>
+			<br>
 			<dt>Teams</dt>
 				<dd>{{.NumTeams}}</dd>
 			<dt>In Queue</dt>
@@ -32,5 +39,18 @@
 			<dt>Active</dt>
 				<dd>{{.NumActive}}</dd>
 		</dl>
+
+		<h2>Teams</h2>
+		<ul>
+			{{range $index, $el := .Teams}}
+				<li>Team #{{$index}}
+					<ul>
+						{{range $el}}
+							<li>Id: {{.Id}}</li>
+						{{end}}
+					</ul>
+				</li>
+			{{end}}
+		</ul>
 	</body>
 </html>

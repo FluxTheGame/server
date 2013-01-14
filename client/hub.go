@@ -31,6 +31,7 @@ func (h *Hub) Run() {
 		select {
 		// add new client
 		case c := <-h.Register:
+			fmt.Println("-- client connected")
 			h.clients[c] = true
 		// lost connection with client
 		case c := <-h.Unregister:
