@@ -1,30 +1,128 @@
 package main
 
-/* ----| TODO ----------------- */
-// 1. Logic for team sorting
-// 2. Disconnection event to XNA
-// 3. Dispatch events for incoming TCP packet
-
 import (
-	"bitbucket.org/jahfer/flux-middleman/events"
 	"bitbucket.org/jahfer/flux-middleman/network"
+	"bitbucket.org/jahfer/flux-middleman/events"
 	"bitbucket.org/jahfer/flux-middleman/packet"
 	"bitbucket.org/jahfer/flux-middleman/team"
 	"bitbucket.org/jahfer/flux-middleman/user"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"net/http"
 	"runtime"
+	"fmt"
 )
-
-const DIR_TMPL = "tmpl/"
-
-var templates = template.Must(template.ParseFiles(DIR_TMPL + "perf.html"))
 
 var teams = team.NewManager()
 
-// Spit out statistics for entire program
+func main() {
+
+	http.HandleFunc("/perf", perfHandler)
+
+	network.Manager.HandleFunc("user:join", onUserJoin)
+	network.Manager.HandleFunc("user:touch", onUserTouch)
+	network.Manager.HandleFunc("user:touchEnd", onUserTouchEnd)
+	network.Manager.HandleFunc("user:bloat", onUserBloat)
+	network.Manager.HandleFunc("user:pinch", onUserPinch)
+	network.Manager.HandleFunc("user:attack", onUserAttack)
+	network.Manager.HandleFunc("disconnect", onDisconnect)
+
+	go teams.Run()
+	network.Init()
+}
+
+func onUserJoin(e events.Event) interface{} {
+	// get incoming data in format of user.Id
+	u := user.User{}
+	if err := json.Unmarshal(e.Args, &u); err != nil {
+		panic(err.Error())
+	}
+	u.Id = user.LastId()
+
+	fmt.Printf("-- Join #%d\n", u.Id)
+
+	// forward to xna
+	simpleToXna("user:join", u.Id)
+
+	// assign to team
+	member := team.Member{User: u, Conn: e.Sender}
+	teams.Queue <- member
+
+	// reply to sencha with proper ID
+	return packet.Out{
+		Name:    "server:createId",
+		Message: user.Id{u.Id},
+	}
+}
+
+func onDisconnect(e events.Event) interface{} {
+	_, id := teams.GetIndex(e.Sender)
+	
+	teams.Unregister <- e.Sender
+
+	simpleToXna("user:disconnect", id)
+	return nil
+}
+
+func onUserTouch(e events.Event) interface{} {
+	// get incoming data in format of user.Coords
+	pos := user.Coords{}
+	if err := json.Unmarshal(e.Args, &pos); err != nil {
+		panic(err.Error())
+	}
+
+	fmt.Printf("(user:touch)\t#%d: (%d, %d)\n", pos.Id, pos.X, pos.Y)
+
+	// forward to XNA
+	msg := struct {
+		Name    string 	`tcp:"name"`
+		Id 		int 	`tcp:"id"`
+		X 		int 	`tcp:"x"`
+		Y 		int 	`tcp:"y"`
+	}{"user:touch", pos.Id, pos.X, pos.Y}
+
+	network.TcpClients.Broadcast <- msg
+
+	return nil
+}
+
+func onUserTouchEnd(e events.Event) interface{} {
+	u := events.GetUserId(e)
+	fmt.Printf("(user:touchEnd)\t#%d\n", u.Id)
+
+	// forward to XNA
+	simpleToXna("user:touchEnd", u.Id)
+	return nil
+}
+
+func onUserBloat(e events.Event) interface{} {
+	u := events.GetUserId(e)
+	fmt.Printf("(user:bloat)\t#%d\n", u.Id)
+
+	// forward to XNA
+	simpleToXna("user:bloat", u.Id)
+	return nil
+}
+
+func onUserPinch(e events.Event) interface{} {
+	u := events.GetUserId(e)
+	fmt.Printf("(user:pinch)\t#%d\n", u.Id)
+
+	// forward to XNA
+	simpleToXna("user:pinch", u.Id)
+	return nil
+}
+
+func onUserAttack(e events.Event) interface{} {
+	u := events.GetUserId(e)
+	fmt.Printf("(user:attack)\t#%d\n", u.Id)
+
+	// forward to XNA
+	simpleToXna("user:attack", u.Id)
+	return nil
+}
+
+// Spit out performance statistics for entire program
 func perfHandler(w http.ResponseWriter, r *http.Request) {
 
 	data := struct {
@@ -45,128 +143,20 @@ func perfHandler(w http.ResponseWriter, r *http.Request) {
 		Teams:        teams.Roster,
 	}
 
-	err := templates.ExecuteTemplate(w, "perf.html", data)
-	if err != nil {
+	t, _ := template.ParseFiles("tmpl/perf.html")
+    err := t.Execute(w, data)
+    if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-func main() {
-
-	http.HandleFunc("/perf", perfHandler)
-
-	network.Manager.HandleFunc("user:join", onUserJoin)
-	network.Manager.HandleFunc("user:touch", onUserTouch)
-	network.Manager.HandleFunc("user:touchEnd", onUserTouchEnd)
-	network.Manager.HandleFunc("user:bloat", onUserBloat)
-	network.Manager.HandleFunc("user:pinch", onUserPinch)
-	network.Manager.HandleFunc("user:attack", onUserAttack)
-	network.Manager.HandleFunc("disconnect", onDisconnect)
-
-	go teams.Run()
-	network.Init()
-}
-
-func onUserJoin(e events.Event) {
-	// get incoming data in format of user.Id
-	u := user.Id{}
-	if err := json.Unmarshal(e.Args, &u); err != nil {
-		panic(err.Error())
-	}
-
-	id := user.LastId()
-	fmt.Printf("-- Join #%d\n", id)
-
-	simpleToXna("user:join", id)
-
-	// reply to sencha with new ID
-	userIdSet := packet.Out{
-		Name:    "server:createId",
-		Message: user.Id{id},
-	}
-	data, err := json.Marshal(userIdSet)
-	if err != nil {
-		panic(err.Error())
-	}
-	e.Sender.Write(data)
-
-	member := team.Member{Id: id, Conn: e.Sender}
-	teams.Queue <- member
-}
-
-func onDisconnect(e events.Event) {
-
-	//teamId, id := teams.GetIndex(e.Sender)
-
-	teams.Unregister <- e.Sender
-
-	//simpleToXna("user:pinch", u.Id)
-}
-
-func onUserTouch(e events.Event) {
-	// get incoming data in format of user.Coords
-	pos := user.Coords{}
-	if err := json.Unmarshal(e.Args, &pos); err != nil {
-		panic(err.Error())
-	}
-
-	fmt.Printf("(user:touch)\t#%d: (%d, %d)\n", pos.Id, pos.X, pos.Y)
-
-	// forward to XNA
+func simpleToXna(evt string, id int) interface{} {
 	msg := struct {
-		Name     string
-		Id, X, Y int
-	}{"user:touch", pos.Id, pos.X, pos.Y}
-
-	network.TcpClients.Broadcast <- msg
-}
-
-func onUserBloat(e events.Event) {
-	u := getUserId(e)
-	fmt.Printf("(user:bloat)\t#%d\n", u.Id)
-
-	// forward to XNA
-	simpleToXna("user:bloat", u.Id)
-}
-
-func onUserPinch(e events.Event) {
-	u := getUserId(e)
-	fmt.Printf("(user:pinch)\t#%d\n", u.Id)
-
-	// forward to XNA
-	simpleToXna("user:pinch", u.Id)
-}
-
-func onUserAttack(e events.Event) {
-	u := getUserId(e)
-	fmt.Printf("(user:attack)\t#%d\n", u.Id)
-
-	// forward to XNA
-	simpleToXna("user:attack", u.Id)
-}
-
-func onUserTouchEnd(e events.Event) {
-	u := getUserId(e)
-	fmt.Printf("(user:touchEnd)\t#%d\n", u.Id)
-
-	// forward to XNA
-	simpleToXna("user:touchEnd", u.Id)
-}
-
-func simpleToXna(evt string, id int) {
-	msg := struct {
-		Name string
-		Id   int
+		Name string `tcp:"name"`
+		Id   int `tcp:"id"`
 	}{evt, id}
 
 	network.TcpClients.Broadcast <- msg
-}
 
-func getUserId(e events.Event) user.Id {
-	u := user.Id{}
-	if err := json.Unmarshal(e.Args, &u); err != nil {
-		panic(err.Error())
-	}
-
-	return u
+	return nil
 }

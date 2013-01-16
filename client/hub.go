@@ -29,15 +29,18 @@ func (h Hub) NumClients() int {
 func (h *Hub) Run() {
 	for {
 		select {
+
 		// add new client
 		case c := <-h.Register:
 			fmt.Println("-- client connected")
 			h.clients[c] = true
+
 		// lost connection with client
 		case c := <-h.Unregister:
 			fmt.Println("-- client disconnected")
 			delete(h.clients, c)
 			c.Close()
+
 		// message being piped in to relay to clients
 		case msg := <-h.Broadcast:
 			for c := range h.clients {
@@ -51,6 +54,7 @@ func (h *Hub) Run() {
 					c.Close()
 				}
 			}
+			
 		}
 	}
 }

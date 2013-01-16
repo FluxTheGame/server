@@ -3,15 +3,14 @@ package network
 import (
 	"bitbucket.org/jahfer/flux-middleman/client"
 	"bitbucket.org/jahfer/flux-middleman/events"
-	//"bitbucket.org/jahfer/flux-middleman/team"
 	"code.google.com/p/go.net/websocket"
 	"net"
 	"net/http"
-	"time"
+	_ "time"
 	"fmt"
 )
 
-// Create objects to store all connections
+// store all client connections
 var WsClients 	= client.NewHub() // sencha users
 var TcpClients 	= client.NewHub() // xna
 // Create event manager for dispatches
@@ -21,11 +20,11 @@ var Manager 	= events.NewManager()
 func Init() {
 	go initTcpServer()
 	go initSocketServer()
-	go Manager.Listener()
+	Manager.Listener()
 
-	for {
+	/*for {
 		time.Sleep(1000 * time.Millisecond)
-	}
+	}*/
 }
 
 // Called on every new WebSocket connection

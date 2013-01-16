@@ -46,7 +46,9 @@
 				<li>Team #{{$index}}
 					<ul>
 						{{range $el}}
-							<li>Id: {{.Id}}</li>
+							{{with .User}}
+								<li>[{{.Id}}] {{.Name}}</li>
+							{{end}}
 						{{end}}
 					</ul>
 				</li>

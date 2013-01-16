@@ -1,27 +1,19 @@
 package team
 
 import (
+	"bitbucket.org/jahfer/flux-middleman/user"
 	"math"
 	"io"
 )
 
-var lastId int = 0
-
-func LastId() int {
-	id := lastId
-	lastId++
-	return id
-}
-
 type Member struct {
-	Id int
-	teamId int
+	User user.User
 	Conn io.Writer
 }
 
 type Manager struct {
-	Roster [][]Member // list of team ids and members per team
-	Queue chan Member // user ids
+	Roster [/*team id*/][/*user id*/]Member
+	Queue chan Member
 	Unregister chan io.Writer
 }
 
@@ -33,16 +25,11 @@ func NewManager() Manager {
 	}
 }
 
-
-// Shows number of open connections, not logged-in users
-func (t Manager) NumUsers() int {
-	count := 0
-
+func (t Manager) NumUsers() (count int) {
 	for _, m := range t.Roster {
 		count += len(m)
 	}
-
-	return count
+	return
 }
 
 func (t Manager) MaxTeams() int {
@@ -60,25 +47,10 @@ func (t *Manager) Run() {
 		select {
 		// add new client
 		case member := <-t.Queue:
-			// register client to team
-			t.add(member)
-		
+			t.addMember(member)
 		// user has disconnected
 		case deadClient := <-t.Unregister:
-
-			teamId, id := t.GetIndex(deadClient)
-
-			if teamId != -1 {
-				t.Roster[teamId][id] = t.Roster[teamId][len(t.Roster[teamId])-1]
-				t.Roster[teamId] = t.Roster[teamId][0:len(t.Roster[teamId])-1]
-
-				// if team is now empty...and not the last team!
-				if len(t.Roster[teamId]) < 1 && len(t.Roster) > 1 {
-					// remove!
-					t.Roster[teamId] = t.Roster[len(t.Roster)-1]
-					t.Roster = t.Roster[0:len(t.Roster)-1]
-				}
-			}
+			t.removeMember(deadClient)
 		}
 	}
 }
@@ -94,14 +66,33 @@ func (t *Manager) GetIndex(conn io.Writer) (int, int) {
 		}
 	}
 
+	// user not found
 	return -1, -1
 }
 
-func (t *Manager) add(m Member) {
+func (t *Manager) removeMember(conn io.Writer) {
+
+	teamId, id := t.GetIndex(conn)
+
+	if teamId != -1 {
+		// swap index to delete with last element, then cut off last item
+		// ** does not maintain order!
+		t.Roster[teamId][id] = t.Roster[teamId][len(t.Roster[teamId])-1]
+		t.Roster[teamId] = t.Roster[teamId][0:len(t.Roster[teamId])-1]
+
+		// if team is now empty...and not the last team!
+		if len(t.Roster[teamId]) < 1 && len(t.Roster) > 1 {
+			// remove!
+			t.Roster[teamId] = t.Roster[len(t.Roster)-1]
+			t.Roster = t.Roster[0:len(t.Roster)-1]
+		}
+	}
+}
+
+func (t *Manager) addMember(m Member) {
 
 	if len(t.Roster) < t.MaxTeams() {
 		// create a new collector
-		m.teamId = len(t.Roster)
 		t.Roster = append(t.Roster, []Member{m})
 	} else {
 		// add users to existing collection
@@ -111,7 +102,6 @@ func (t *Manager) add(m Member) {
 				smallest = i
 			}
 		}
-		m.teamId = smallest
 		t.Roster[smallest] = append(t.Roster[smallest], m)
 	}
 

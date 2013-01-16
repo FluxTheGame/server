@@ -11,9 +11,6 @@ import (
 	"bitbucket.org/jahfer/flux-middleman/packet"
 )
 
-/* ===|==================================
- * Client Interface
- * ======================================*/
 type Client interface {
 	// Send data to client
 	io.WriteCloser
@@ -21,9 +18,10 @@ type Client interface {
 	Format(v interface{}) []byte
 }
 
-/* ===|==================================
- * Generic Client 
- * ======================================*/
+/* ===|====================================================
+ * Generic Client  
+ * -> Used to provide generic handlers that fit Client{}
+ * ======================================================*/
 type genericClient struct {
 	Conn io.WriteCloser
 	Send chan []byte
@@ -63,7 +61,7 @@ type TcpClient struct {
 	Conn net.Conn
 }
 
-// TCP client isn't JSON! :O
+// TCP client doesn't read JSON! :O
 func (c *TcpClient) Format(v interface{}) []byte {
 	ref := reflect.ValueOf(&v)
 	return c.reflectValue(ref)
@@ -79,10 +77,23 @@ func (c *TcpClient) reflectValue(v reflect.Value) []byte {
 		output := ""
 		for i := 0; i < v.NumField(); i++ {
 			f := v.Field(i)
-			output += fmt.Sprintf("/%s=%v", kind.Field(i).Name, f.Interface())
+
+			key := kind.Field(i).Name
+
+			tv := kind.Field(i).Tag.Get("tcp")
+			if tv != "" {
+				if tv == "-" {
+					continue
+				}
+
+				key = tv
+			}
+
+			output += fmt.Sprintf("/%s=%v", key, f.Interface())
 		}
 		output += "$"//\n
 		return []byte(output)
+
 	// Lets try it again, using the elements inside
 	case reflect.Interface, reflect.Ptr:
 		if v.IsNil() {
@@ -103,7 +114,6 @@ func (c *TcpClient) Listener(incoming chan packet.In) {
 		buffer := make([]byte, 1024)
 		_, err := c.Conn.Read(buffer)
 		if err != nil {
-			//fmt.Println("Read failed. Closing TCP client...")
 			break
 		}
 		//fmt.Println("[TCP] -> " + string(buffer[0:bytesRead]))
@@ -119,7 +129,6 @@ func (c *TcpClient) Sender() {
 	for message := range c.Send {
 		_, err := c.Conn.Write(message)
 		if err != nil {
-			//fmt.Println("Send failed. Closing TCP client...")
 			break
 		}
 	}
@@ -143,7 +152,6 @@ func (c *WebSocketClient) Listener(incoming chan packet.In) {
 		var event string
 		err := websocket.Message.Receive(c.Conn, &event)
 		if err != nil {
-			//fmt.Println("Read failed. Closing WS client...")
 			break
 		}
 
@@ -160,11 +168,8 @@ func (c *WebSocketClient) Sender() {
 	for message := range c.Send {
 
 		msg := string(message)
-		//fmt.Println("[WS]  <- " + msg)
 
-		if err := websocket.Message.Send(c.Conn, msg); err != nil {
-			//fmt.Println("Send failed. Closing socket...")
-			break
+		if err := websocket.Message.Send(c.Conn, msg); err != nil {			break
 		}
 	}
 	c.Conn.Close()

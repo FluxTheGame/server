@@ -1,5 +1,6 @@
 package user
 
+var lastId int = 0
 
 type Id struct {
 	Id int `json:"id"`
@@ -15,9 +16,6 @@ type Coords struct {
 	X  int `json:"x"`
 	Y  int `json:"y"`
 }
-
-
-var lastId int = 0
 
 func LastId() int {
 	id := lastId
