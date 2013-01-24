@@ -1,16 +1,16 @@
 package main
 
 import (
-	"bitbucket.org/jahfer/flux-middleman/network"
 	"bitbucket.org/jahfer/flux-middleman/events"
+	"bitbucket.org/jahfer/flux-middleman/network"
 	"bitbucket.org/jahfer/flux-middleman/packet"
 	"bitbucket.org/jahfer/flux-middleman/team"
 	"bitbucket.org/jahfer/flux-middleman/user"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"net/http"
 	"runtime"
-	"fmt"
 )
 
 var teams = team.NewManager()
@@ -37,9 +37,12 @@ func onUserJoin(e events.Event) interface{} {
 	if err := json.Unmarshal(e.Args, &u); err != nil {
 		panic(err.Error())
 	}
-	u.Id = user.LastId()
 
-	fmt.Printf("-- Join #%d\n", u.Id)
+	if err := u.Save(); err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("-- Join %+v\n", u)
 
 	// forward to xna
 	simpleToXna("user:join", u.Id)
@@ -57,7 +60,7 @@ func onUserJoin(e events.Event) interface{} {
 
 func onDisconnect(e events.Event) interface{} {
 	_, id := teams.GetIndex(e.Sender)
-	
+
 	teams.Unregister <- e.Sender
 
 	simpleToXna("user:disconnect", id)
@@ -75,10 +78,10 @@ func onUserTouch(e events.Event) interface{} {
 
 	// forward to XNA
 	msg := struct {
-		Name    string 	`tcp:"name"`
-		Id 		int 	`tcp:"id"`
-		X 		int 	`tcp:"x"`
-		Y 		int 	`tcp:"y"`
+		Name string `tcp:"name"`
+		Id   int    `tcp:"id"`
+		X    int    `tcp:"x"`
+		Y    int    `tcp:"y"`
 	}{"user:touch", pos.Id, pos.X, pos.Y}
 
 	network.TcpClients.Broadcast <- msg
@@ -144,8 +147,8 @@ func perfHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t, _ := template.ParseFiles("tmpl/perf.html")
-    err := t.Execute(w, data)
-    if err != nil {
+	err := t.Execute(w, data)
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -153,7 +156,7 @@ func perfHandler(w http.ResponseWriter, r *http.Request) {
 func simpleToXna(evt string, id int) interface{} {
 	msg := struct {
 		Name string `tcp:"name"`
-		Id   int `tcp:"id"`
+		Id   int    `tcp:"id"`
 	}{evt, id}
 
 	network.TcpClients.Broadcast <- msg

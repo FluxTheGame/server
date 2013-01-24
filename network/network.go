@@ -3,6 +3,7 @@ package network
 import (
 	"bitbucket.org/jahfer/flux-middleman/client"
 	"bitbucket.org/jahfer/flux-middleman/events"
+	"bitbucket.org/jahfer/flux-middleman/db"
 	"code.google.com/p/go.net/websocket"
 	"net"
 	"net/http"
@@ -20,11 +21,11 @@ var Manager 	= events.NewManager()
 func Init() {
 	go initTcpServer()
 	go initSocketServer()
-	Manager.Listener()
+	go initDb()
 
-	/*for {
-		time.Sleep(1000 * time.Millisecond)
-	}*/
+	defer db.Close()
+
+	Manager.Listener()
 }
 
 // Called on every new WebSocket connection
@@ -55,7 +56,7 @@ func tcpHandler(conn net.Conn) {
 
 // Start the HTTP/WS server to listen for new connections
 func initSocketServer() {
-	fmt.Println("-- Initializing WS server on :8080")
+	fmt.Println("-- Initializing WebSocket server on :8080")
 
 	go WsClients.Run()
 
@@ -88,5 +89,15 @@ func initTcpServer() {
 			panic(err.Error())
 		}
 		go tcpHandler(conn)
+	}
+}
+
+func initDb() {
+	fmt.Println("-- Initializing Redis server on :6379")
+	db.Init()
+
+	set := db.Redis.Set("global:nextUserId", "0")
+	if err := set.Err(); err != nil {
+		panic(err)
 	}
 }

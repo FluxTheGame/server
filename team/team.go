@@ -2,7 +2,10 @@ package team
 
 import (
 	"bitbucket.org/jahfer/flux-middleman/user"
+	"bitbucket.org/jahfer/flux-middleman/db"
+	"strconv"
 	"math"
+	"fmt"
 	"io"
 )
 
@@ -12,7 +15,7 @@ type Member struct {
 }
 
 type Manager struct {
-	Roster [/*team id*/][/*user id*/]Member
+	Roster [/*team id*/][/*user index*/]Member
 	Queue chan Member
 	Unregister chan io.Writer
 }
@@ -50,7 +53,7 @@ func (t *Manager) Run() {
 			t.addMember(member)
 		// user has disconnected
 		case deadClient := <-t.Unregister:
-			t.removeMember(deadClient)
+			go t.removeMember(deadClient)
 		}
 	}
 }
@@ -80,20 +83,30 @@ func (t *Manager) removeMember(conn io.Writer) {
 		t.Roster[teamId][id] = t.Roster[teamId][len(t.Roster[teamId])-1]
 		t.Roster[teamId] = t.Roster[teamId][0:len(t.Roster[teamId])-1]
 
+		teamKey := fmt.Sprintf("team:%v:users", teamId)
+		//fmt.Printf("Removing user %v from team %v\n", id, teamId)
+		//db.Redis.LRem(teamKey, 0, strconv.Itoa(id))
+
 		// if team is now empty...and not the last team!
 		if len(t.Roster[teamId]) < 1 && len(t.Roster) > 1 {
 			// remove!
 			t.Roster[teamId] = t.Roster[len(t.Roster)-1]
 			t.Roster = t.Roster[0:len(t.Roster)-1]
+
+			db.Redis.Del(teamKey)
 		}
 	}
 }
 
 func (t *Manager) addMember(m Member) {
 
+	var teamId int
+
 	if len(t.Roster) < t.MaxTeams() {
 		// create a new collector
 		t.Roster = append(t.Roster, []Member{m})
+		teamId = len(t.Roster)-1
+
 	} else {
 		// add users to existing collection
 		smallest := 0
@@ -103,6 +116,20 @@ func (t *Manager) addMember(m Member) {
 			}
 		}
 		t.Roster[smallest] = append(t.Roster[smallest], m)
+		teamId = smallest
+	}
+
+	// add user to team list in DB
+	key := fmt.Sprintf("team:%v:users", teamId)
+	push := db.Redis.RPush(key, strconv.Itoa(m.User.Id))
+	if err := push.Err(); err != nil {
+		panic(err)
+	}
+
+	key = fmt.Sprintf("uid:%v:team", m.User.Id)
+	set := db.Redis.Set(key, strconv.Itoa(teamId))
+	if err := set.Err(); err != nil {
+		panic(err)
 	}
 
 }

@@ -41,7 +41,7 @@ func (em *Manager) Listener() {
 		if pkt.Raw == nil {
 			// envoke disconnect callbacks
 			if callback, exists := em.handlers["disconnect"]; exists {
-				callback(Event{ Name:"disconnect", Sender: pkt.Sender })
+				go callback(Event{ Name:"disconnect", Sender: pkt.Sender })
 			}
 			continue
 		}

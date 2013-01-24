@@ -8,7 +8,7 @@ import (
 // What is received from a WebSocket
 type In struct {
 	Raw []byte
-	Sender io.Writer
+	Sender io.WriteCloser
 }
 
 // Sending out to a WebSocket
