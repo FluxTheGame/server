@@ -11,21 +11,40 @@ import (
 	"html/template"
 	"net/http"
 	"runtime"
+	"time"
 )
 
 var teams = team.NewManager()
 
 func main() {
 
+	fmt.Println("===============================================")
+	fmt.Println("  _____ _    _   ___  __")
+	fmt.Println(" |  ___| |  | | | \\ \\/ /")
+	fmt.Println(" | |_  | |  | | | |\\  / ")
+	fmt.Println(" |  _| | |__| |_| |/  \\ ")
+	fmt.Println(" |_|   |_____\\___//_/\\_\\")
+	fmt.Println("")
+	fmt.Println("===============================================")
+
 	http.HandleFunc("/perf", perfHandler)
 
-	network.Manager.HandleFunc("user:join", onUserJoin)
+	network.Manager.HandleFunc("user:new", onUserJoin)
 	network.Manager.HandleFunc("user:touch", onUserTouch)
 	network.Manager.HandleFunc("user:touchEnd", onUserTouchEnd)
 	network.Manager.HandleFunc("user:bloat", onUserBloat)
 	network.Manager.HandleFunc("user:pinch", onUserPinch)
 	network.Manager.HandleFunc("user:attack", onUserAttack)
-	network.Manager.HandleFunc("disconnect", onDisconnect)
+	network.Manager.HandleFunc("user:disconnect", onUserDisconnect)
+
+	network.Manager.HandleFunc("collector:merge", onCollectorMerge)
+
+	go func() {
+		time.Sleep(1 * time.Minute)
+		fmt.Println("Merging...")
+		teams.Merge(team.Merger{TeamId1: 0, TeamId2: 1})
+		fmt.Println("Merge complete!")
+	}()
 
 	go teams.Run()
 	network.Init()
@@ -42,23 +61,28 @@ func onUserJoin(e events.Event) interface{} {
 		panic(err)
 	}
 
-	fmt.Printf("-- Join %+v\n", u)
-
-	// forward to xna
-	simpleToXna("user:join", u.Id)
-
 	// assign to team
 	member := team.Member{User: u, Conn: e.Sender}
 	teams.Queue <- member
+	assignedTeamId := <-teams.LastId
+
+	// forward to xna
+	//simpleToXna("user:join", u.Id)
+	msg := struct {
+		Name   string `tcp:"name"`
+		Id     int    `tcp:"id"`
+		TeamId int    `tcp:"teamId"`
+	}{"user:new", u.Id, assignedTeamId}
+	network.TcpClients.Broadcast <- msg
 
 	// reply to sencha with proper ID
 	return packet.Out{
-		Name:    "server:createId",
+		Name:    "user:id",
 		Message: user.Id{u.Id},
 	}
 }
 
-func onDisconnect(e events.Event) interface{} {
+func onUserDisconnect(e events.Event) interface{} {
 	_, id := teams.GetIndex(e.Sender)
 
 	teams.Unregister <- e.Sender
@@ -73,8 +97,6 @@ func onUserTouch(e events.Event) interface{} {
 	if err := json.Unmarshal(e.Args, &pos); err != nil {
 		panic(err.Error())
 	}
-
-	fmt.Printf("(user:touch)\t#%d: (%d, %d)\n", pos.Id, pos.X, pos.Y)
 
 	// forward to XNA
 	msg := struct {
@@ -91,8 +113,6 @@ func onUserTouch(e events.Event) interface{} {
 
 func onUserTouchEnd(e events.Event) interface{} {
 	u := events.GetUserId(e)
-	fmt.Printf("(user:touchEnd)\t#%d\n", u.Id)
-
 	// forward to XNA
 	simpleToXna("user:touchEnd", u.Id)
 	return nil
@@ -100,8 +120,6 @@ func onUserTouchEnd(e events.Event) interface{} {
 
 func onUserBloat(e events.Event) interface{} {
 	u := events.GetUserId(e)
-	fmt.Printf("(user:bloat)\t#%d\n", u.Id)
-
 	// forward to XNA
 	simpleToXna("user:bloat", u.Id)
 	return nil
@@ -109,8 +127,6 @@ func onUserBloat(e events.Event) interface{} {
 
 func onUserPinch(e events.Event) interface{} {
 	u := events.GetUserId(e)
-	fmt.Printf("(user:pinch)\t#%d\n", u.Id)
-
 	// forward to XNA
 	simpleToXna("user:pinch", u.Id)
 	return nil
@@ -118,8 +134,6 @@ func onUserPinch(e events.Event) interface{} {
 
 func onUserAttack(e events.Event) interface{} {
 	u := events.GetUserId(e)
-	fmt.Printf("(user:attack)\t#%d\n", u.Id)
-
 	// forward to XNA
 	simpleToXna("user:attack", u.Id)
 	return nil
@@ -135,7 +149,7 @@ func perfHandler(w http.ResponseWriter, r *http.Request) {
 		NumTeams     int
 		NumInQueue   int
 		NumActive    int
-		Teams        [][]team.Member
+		Teams        map[int][]team.Member
 	}{
 		NumGoroutine: runtime.NumGoroutine(),
 		WsNumConn:    network.WsClients.NumClients(),
@@ -151,6 +165,18 @@ func perfHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func onCollectorMerge(e events.Event) interface{} {
+
+	toMerge := team.Merger{}
+	if err := json.Unmarshal(e.Args, &toMerge); err != nil {
+		panic(err.Error())
+	}
+
+	teams.Merge(toMerge)
+
+	return nil
 }
 
 func simpleToXna(evt string, id int) interface{} {

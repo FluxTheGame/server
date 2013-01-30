@@ -17,13 +17,31 @@ var TcpClients 	= client.NewHub() // xna
 // Create event manager for dispatches
 var Manager 	= events.NewManager()
 
+var globalInit = make(chan bool, 3)
+
 // Boot cycle for servers
 func Init() {
+	fmt.Println(" Welcome to Flux!")
+	fmt.Println("-----------------------------------------------")
+	fmt.Println(" Booting up background services...")
+
 	go initTcpServer()
 	go initSocketServer()
-	go initDb()
 
+	go initDb()
 	defer db.Close()
+
+	count := 0
+
+	go func() {
+		for _ = range globalInit {
+			count++;
+			if count >= 3 {
+				fmt.Println(" Initialization complete!")
+				fmt.Println("")
+			}
+		}
+	}()
 
 	Manager.Listener()
 }
@@ -56,7 +74,7 @@ func tcpHandler(conn net.Conn) {
 
 // Start the HTTP/WS server to listen for new connections
 func initSocketServer() {
-	fmt.Println("-- Initializing WebSocket server on :8080")
+	fmt.Println(" -- Initializing WebSocket server on :8080")
 
 	go WsClients.Run()
 
@@ -65,6 +83,8 @@ func initSocketServer() {
 		http.ServeFile(w, r, "index.html")
 	})
 
+	globalInit <- true
+
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		panic("ListenAndServe: " + err.Error())
 	}
@@ -72,7 +92,7 @@ func initSocketServer() {
 
 // Start the TCP server and listen for new connections
 func initTcpServer() {
-	fmt.Println("-- Initializing TCP server on :8100")
+	fmt.Println(" -- Initializing TCP server on :8100")
 
 	go TcpClients.Run()
 
@@ -82,6 +102,8 @@ func initTcpServer() {
 	}
 
 	defer listener.Close()
+
+	globalInit <- true
 
 	for {
 		conn, err := listener.Accept()
@@ -93,11 +115,13 @@ func initTcpServer() {
 }
 
 func initDb() {
-	fmt.Println("-- Initializing Redis server on :6379")
+	fmt.Println(" -- Initializing Redis server on :6379")
 	db.Init()
 
 	set := db.Redis.Set("global:nextUserId", "0")
 	if err := set.Err(); err != nil {
 		panic(err)
 	}
+
+	globalInit <- true
 }

@@ -4,6 +4,10 @@
 		"selected_items":
 		[
 			[
+				"Get",
+				"GetUserId"
+			],
+			[
 				"prin",
 				"Println	n int, err error ƒ"
 			],
@@ -315,15 +319,23 @@
 			"file": "main.go",
 			"settings":
 			{
-				"buffer_size": 4044,
+				"buffer_size": 3655,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "db/db.go",
+			"file": "network/network.go",
 			"settings":
 			{
-				"buffer_size": 1457,
+				"buffer_size": 2263,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "team/team.go",
+			"settings":
+			{
+				"buffer_size": 2745,
 				"line_ending": "Unix"
 			}
 		},
@@ -331,7 +343,47 @@
 			"file": "user/user.go",
 			"settings":
 			{
-				"buffer_size": 208,
+				"buffer_size": 725,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "db/db.go",
+			"settings":
+			{
+				"buffer_size": 1108,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "events/events.go",
+			"settings":
+			{
+				"buffer_size": 1724,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Library/Logs/DiagnosticReports/Kernel_2013-01-24-214559_flux.panic",
+			"settings":
+			{
+				"buffer_size": 7960,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "client/client.go",
+			"settings":
+			{
+				"buffer_size": 3497,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "packet/packet.go",
+			"settings":
+			{
+				"buffer_size": 459,
 				"line_ending": "Unix"
 			}
 		}
@@ -339,9 +391,13 @@
 	"build_system": "",
 	"command_palette":
 	{
-		"height": 87.0,
+		"height": 392.0,
 		"selected_items":
 		[
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
 			[
 				"disable",
 				"Package Control: Disable Package"
@@ -531,7 +587,7 @@
 				"Preferences: Settings - User"
 			]
 		],
-		"width": 556.0
+		"width": 568.0
 	},
 	"console":
 	{
@@ -548,12 +604,21 @@
 	},
 	"file_history":
 	[
+		"/Users/jahferh/gocode/src/bitbucket.org/jahfer/flux-middleman/client/hub.go",
+		"/Users/jahferh/gocode/src/bitbucket.org/jahfer/flux-middleman/db/db.go",
+		"/Users/jahferh/Library/Caches/com.binarynights.ForkLift2/#2/header.php",
+		"/Users/jahferh/Library/Caches/com.binarynights.ForkLift2/#3/header-spreadlegs.php",
+		"/Users/jahferh/Library/Caches/com.binarynights.ForkLift2/#4/header-chicks.php",
+		"/Users/jahferh/Library/Caches/com.binarynights.ForkLift2/#5/header-gayboys.php",
+		"/Users/jahferh/Library/Caches/com.binarynights.ForkLift2/#6/header-gentlemen.php",
+		"/Users/jahferh/Library/Caches/com.binarynights.ForkLift2/#1/page.php",
+		"/Users/jahferh/Library/Caches/com.binarynights.ForkLift2/#0/category-spreadlegs.php",
+		"/Users/jahferh/gocode/src/bitbucket.org/jahfer/flux-middleman/user/user.go",
 		"/Users/jahferh/gocode/src/bitbucket.org/jahfer/flux-middleman/team/team.go",
 		"/Users/jahferh/Desktop/untitled.go",
 		"/Users/jahferh/Dropbox/Teams.js",
 		"/Users/jahferh/gocode/src/bitbucket.org/jahfer/flux-middleman/network/network.go",
 		"/Users/jahferh/gocode/src/bitbucket.org/jahfer/flux-middleman/main.go",
-		"/Users/jahferh/gocode/src/bitbucket.org/jahfer/flux-middleman/client/hub.go",
 		"/Users/jahferh/gocode/src/bitbucket.org/jahfer/flux-middleman/client/client.go",
 		"/Users/jahferh/gocode/src/bitbucket.org/jahfer/flux-middleman/network/network_test.go",
 		"/Users/jahferh/gocode/src/bitbucket.org/jahfer/flux-middleman/packet/packet.go",
@@ -561,7 +626,6 @@
 		"/Users/jahferh/gocode/src/github.com/jahfer/string/string_test.go",
 		"/Users/jahferh/gocode/src/code.google.com/p/go.net/websocket/websocket_test.go",
 		"/Users/jahferh/gocode/src/bitbucket.org/jahfer/flux-middleman/events/events.go",
-		"/Users/jahferh/gocode/src/bitbucket.org/jahfer/flux-middleman/user/user.go",
 		"/Users/jahferh/.zshrc",
 		"/Users/jahferh/gocode/src/bitbucket.org/jahfer/flux-middleman/client/teams.go",
 		"/Users/jahferh/gocode/src/bitbucket.org/jahfer/flux-middleman/main_test.go",
@@ -655,7 +719,6 @@
 		"/Users/jahferh/Sites/kontrolboard/views/display_facebook.phtml",
 		"/Users/jahferh/Sites/kontrolboard/views/display_tumblr.phtml",
 		"/Users/jahferh/Sites/kontrolboard/models/tumblr_model.php",
-		"/Users/jahferh/Library/Caches/com.binarynights.ForkLift2/#2/header.php",
 		"/Users/jahferh/Library/Caches/com.binarynights.ForkLift2/#1/header-top-navbar.php",
 		"/Users/jahferh/Sites/kontrolboard/views/config_slider.phtml",
 		"/Users/jahferh/Sites/kontrolboard/js/isvalid.class.js",
@@ -668,14 +731,7 @@
 		"/Users/jahferh/Sites/kontrolboard/views/settings_background.phtml",
 		"/Users/jahferh/Sites/kontrolboard/styles/scss/jquery.fileupload-ui.scss",
 		"/Users/jahferh/Sites/kontrolboard/views/settings_theme.phtml",
-		"/Users/jahferh/Sites/kontrolboard/views/settings_accent.phtml",
-		"/Users/jahferh/Sites/kontrolboard/views/settings_page_title.phtml",
-		"/Users/jahferh/Sites/kontrolboard/js/validation.compiled.js",
-		"/Users/jahferh/Sites/kontrolboard/views/config_tumblr.phtml",
-		"/Users/jahferh/Sites/kontrolboard/config.php",
-		"/Users/jahferh/Sites/kontrolboard/views/config_instagram.phtml",
-		"/Users/jahferh/Sites/kontrolboard/models/instagram_model.php",
-		"/Users/jahferh/Sites/kontrolboard/styles/css/master-front.css"
+		"/Users/jahferh/Sites/kontrolboard/views/settings_accent.phtml"
 	],
 	"find":
 	{
@@ -696,6 +752,7 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"genericClient",
 			"userId",
 			"n",
 			"clients",
@@ -822,8 +879,7 @@
 			"password",
 			"account",
 			"csrf",
-			"defined",
-			"margin-bottom: 15px;"
+			"defined"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -846,7 +902,7 @@
 	"groups":
 	[
 		{
-			"selected": 2,
+			"selected": 6,
 			"sheets":
 			[
 				{
@@ -854,15 +910,15 @@
 					"file": "main.go",
 					"settings":
 					{
-						"buffer_size": 4044,
+						"buffer_size": 3655,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1211,
-								1211
+								1472,
+								1472
 							]
 						],
 						"settings":
@@ -959,25 +1015,255 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 744.0,
+						"translation.y": 610.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
 					"buffer": 1,
-					"file": "db/db.go",
+					"file": "network/network.go",
 					"settings":
 					{
-						"buffer_size": 1457,
+						"buffer_size": 2263,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								269,
-								206
+								1392,
+								1392
+							]
+						],
+						"settings":
+						{
+							"annotations":
+							[
+								"TODO",
+								"README",
+								"FIXME"
+							],
+							"csslint_options":
+							{
+								"adjoining-classes": "warning",
+								"box-model": true,
+								"box-sizing": "warning",
+								"compatible-vendor-prefixes": "warning",
+								"display-property-grouping": true,
+								"duplicate-background-images": "warning",
+								"duplicate-properties": true,
+								"empty-rules": true,
+								"errors": true,
+								"fallback-colors": "warning",
+								"floats": "warning",
+								"font-faces": "warning",
+								"font-sizes": "warning",
+								"gradients": "warning",
+								"ids": "warning",
+								"import": "warning",
+								"important": "warning",
+								"known-properties": true,
+								"outline-none": "warning",
+								"overqualified-elements": "warning",
+								"qualified-headings": "warning",
+								"regex-selectors": "warning",
+								"rules-count": "warning",
+								"shorthand": "warning",
+								"star-property-hack": "warning",
+								"text-indent": "warning",
+								"underscore-property-hack": "warning",
+								"unique-headings": "warning",
+								"universal-selector": "warning",
+								"vendor-prefix": true,
+								"zero-units": "warning"
+							},
+							"gjslint_ignore":
+							[
+								110.0
+							],
+							"gjslint_options":
+							[
+							],
+							"javascript_linter": "jshint",
+							"jshint_options":
+							{
+								"browser": true,
+								"evil": true,
+								"regexdash": true,
+								"sub": true,
+								"trailing": true,
+								"wsh": true
+							},
+							"pep8": true,
+							"pep8_ignore":
+							[
+								"E501"
+							],
+							"perl_linter": "perlcritic",
+							"pyflakes_ignore":
+							[
+							],
+							"pyflakes_ignore_import_*": true,
+							"sublimelinter": true,
+							"sublimelinter_delay": 2.0,
+							"sublimelinter_disable":
+							[
+							],
+							"sublimelinter_executable_map":
+							{
+							},
+							"sublimelinter_fill_outlines": false,
+							"sublimelinter_gutter_marks": false,
+							"sublimelinter_mark_style": "outline",
+							"sublimelinter_notes": false,
+							"sublimelinter_objj_check_ascii": false,
+							"sublimelinter_popup_errors_on_save": false,
+							"sublimelinter_syntax_map":
+							{
+								"C++": "c",
+								"Python Django": "python",
+								"Ruby on Rails": "ruby"
+							},
+							"sublimelinter_wrap_find": true,
+							"syntax": "Packages/Go/Go.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 689.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "team/team.go",
+					"settings":
+					{
+						"buffer_size": 2745,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								934,
+								934
+							]
+						],
+						"settings":
+						{
+							"annotations":
+							[
+								"TODO",
+								"README",
+								"FIXME"
+							],
+							"csslint_options":
+							{
+								"adjoining-classes": "warning",
+								"box-model": true,
+								"box-sizing": "warning",
+								"compatible-vendor-prefixes": "warning",
+								"display-property-grouping": true,
+								"duplicate-background-images": "warning",
+								"duplicate-properties": true,
+								"empty-rules": true,
+								"errors": true,
+								"fallback-colors": "warning",
+								"floats": "warning",
+								"font-faces": "warning",
+								"font-sizes": "warning",
+								"gradients": "warning",
+								"ids": "warning",
+								"import": "warning",
+								"important": "warning",
+								"known-properties": true,
+								"outline-none": "warning",
+								"overqualified-elements": "warning",
+								"qualified-headings": "warning",
+								"regex-selectors": "warning",
+								"rules-count": "warning",
+								"shorthand": "warning",
+								"star-property-hack": "warning",
+								"text-indent": "warning",
+								"underscore-property-hack": "warning",
+								"unique-headings": "warning",
+								"universal-selector": "warning",
+								"vendor-prefix": true,
+								"zero-units": "warning"
+							},
+							"gjslint_ignore":
+							[
+								110.0
+							],
+							"gjslint_options":
+							[
+							],
+							"javascript_linter": "jshint",
+							"jshint_options":
+							{
+								"browser": true,
+								"evil": true,
+								"regexdash": true,
+								"sub": true,
+								"trailing": true,
+								"wsh": true
+							},
+							"pep8": true,
+							"pep8_ignore":
+							[
+								"E501"
+							],
+							"perl_linter": "perlcritic",
+							"pyflakes_ignore":
+							[
+							],
+							"pyflakes_ignore_import_*": true,
+							"sublimelinter": true,
+							"sublimelinter_delay": 2.0,
+							"sublimelinter_disable":
+							[
+							],
+							"sublimelinter_executable_map":
+							{
+							},
+							"sublimelinter_fill_outlines": false,
+							"sublimelinter_gutter_marks": false,
+							"sublimelinter_mark_style": "outline",
+							"sublimelinter_notes": false,
+							"sublimelinter_objj_check_ascii": false,
+							"sublimelinter_popup_errors_on_save": false,
+							"sublimelinter_syntax_map":
+							{
+								"C++": "c",
+								"Python Django": "python",
+								"Ruby on Rails": "ruby"
+							},
+							"sublimelinter_wrap_find": true,
+							"syntax": "Packages/Go/Go.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 553.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "user/user.go",
+					"settings":
+					{
+						"buffer_size": 725,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								290,
+								290
 							]
 						],
 						"settings":
@@ -1080,11 +1366,11 @@
 					"type": "text"
 				},
 				{
-					"buffer": 2,
-					"file": "user/user.go",
+					"buffer": 4,
+					"file": "db/db.go",
 					"settings":
 					{
-						"buffer_size": 208,
+						"buffer_size": 1108,
 						"regions":
 						{
 						},
@@ -1092,7 +1378,468 @@
 						[
 							[
 								208,
-								208
+								212
+							]
+						],
+						"settings":
+						{
+							"annotations":
+							[
+								"TODO",
+								"README",
+								"FIXME"
+							],
+							"csslint_options":
+							{
+								"adjoining-classes": "warning",
+								"box-model": true,
+								"box-sizing": "warning",
+								"compatible-vendor-prefixes": "warning",
+								"display-property-grouping": true,
+								"duplicate-background-images": "warning",
+								"duplicate-properties": true,
+								"empty-rules": true,
+								"errors": true,
+								"fallback-colors": "warning",
+								"floats": "warning",
+								"font-faces": "warning",
+								"font-sizes": "warning",
+								"gradients": "warning",
+								"ids": "warning",
+								"import": "warning",
+								"important": "warning",
+								"known-properties": true,
+								"outline-none": "warning",
+								"overqualified-elements": "warning",
+								"qualified-headings": "warning",
+								"regex-selectors": "warning",
+								"rules-count": "warning",
+								"shorthand": "warning",
+								"star-property-hack": "warning",
+								"text-indent": "warning",
+								"underscore-property-hack": "warning",
+								"unique-headings": "warning",
+								"universal-selector": "warning",
+								"vendor-prefix": true,
+								"zero-units": "warning"
+							},
+							"gjslint_ignore":
+							[
+								110.0
+							],
+							"gjslint_options":
+							[
+							],
+							"javascript_linter": "jshint",
+							"jshint_options":
+							{
+								"browser": true,
+								"evil": true,
+								"regexdash": true,
+								"sub": true,
+								"trailing": true,
+								"wsh": true
+							},
+							"pep8": true,
+							"pep8_ignore":
+							[
+								"E501"
+							],
+							"perl_linter": "perlcritic",
+							"pyflakes_ignore":
+							[
+							],
+							"pyflakes_ignore_import_*": true,
+							"sublimelinter": true,
+							"sublimelinter_delay": 2.0,
+							"sublimelinter_disable":
+							[
+							],
+							"sublimelinter_executable_map":
+							{
+							},
+							"sublimelinter_fill_outlines": false,
+							"sublimelinter_gutter_marks": false,
+							"sublimelinter_mark_style": "outline",
+							"sublimelinter_notes": false,
+							"sublimelinter_objj_check_ascii": false,
+							"sublimelinter_popup_errors_on_save": false,
+							"sublimelinter_syntax_map":
+							{
+								"C++": "c",
+								"Python Django": "python",
+								"Ruby on Rails": "ruby"
+							},
+							"sublimelinter_wrap_find": true,
+							"syntax": "Packages/Go/Go.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "events/events.go",
+					"settings":
+					{
+						"buffer_size": 1724,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1101,
+								1101
+							]
+						],
+						"settings":
+						{
+							"annotations":
+							[
+								"TODO",
+								"README",
+								"FIXME"
+							],
+							"csslint_options":
+							{
+								"adjoining-classes": "warning",
+								"box-model": true,
+								"box-sizing": "warning",
+								"compatible-vendor-prefixes": "warning",
+								"display-property-grouping": true,
+								"duplicate-background-images": "warning",
+								"duplicate-properties": true,
+								"empty-rules": true,
+								"errors": true,
+								"fallback-colors": "warning",
+								"floats": "warning",
+								"font-faces": "warning",
+								"font-sizes": "warning",
+								"gradients": "warning",
+								"ids": "warning",
+								"import": "warning",
+								"important": "warning",
+								"known-properties": true,
+								"outline-none": "warning",
+								"overqualified-elements": "warning",
+								"qualified-headings": "warning",
+								"regex-selectors": "warning",
+								"rules-count": "warning",
+								"shorthand": "warning",
+								"star-property-hack": "warning",
+								"text-indent": "warning",
+								"underscore-property-hack": "warning",
+								"unique-headings": "warning",
+								"universal-selector": "warning",
+								"vendor-prefix": true,
+								"zero-units": "warning"
+							},
+							"gjslint_ignore":
+							[
+								110.0
+							],
+							"gjslint_options":
+							[
+							],
+							"javascript_linter": "jshint",
+							"jshint_options":
+							{
+								"browser": true,
+								"evil": true,
+								"regexdash": true,
+								"sub": true,
+								"trailing": true,
+								"wsh": true
+							},
+							"pep8": true,
+							"pep8_ignore":
+							[
+								"E501"
+							],
+							"perl_linter": "perlcritic",
+							"pyflakes_ignore":
+							[
+							],
+							"pyflakes_ignore_import_*": true,
+							"sublimelinter": true,
+							"sublimelinter_delay": 2.0,
+							"sublimelinter_disable":
+							[
+							],
+							"sublimelinter_executable_map":
+							{
+							},
+							"sublimelinter_fill_outlines": false,
+							"sublimelinter_gutter_marks": false,
+							"sublimelinter_mark_style": "outline",
+							"sublimelinter_notes": false,
+							"sublimelinter_objj_check_ascii": false,
+							"sublimelinter_popup_errors_on_save": false,
+							"sublimelinter_syntax_map":
+							{
+								"C++": "c",
+								"Python Django": "python",
+								"Ruby on Rails": "ruby"
+							},
+							"sublimelinter_wrap_find": true,
+							"syntax": "Packages/Go/Go.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 563.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "/Library/Logs/DiagnosticReports/Kernel_2013-01-24-214559_flux.panic",
+					"settings":
+					{
+						"buffer_size": 7960,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"annotations":
+							[
+								"TODO",
+								"README",
+								"FIXME"
+							],
+							"csslint_options":
+							{
+								"adjoining-classes": "warning",
+								"box-model": true,
+								"box-sizing": "warning",
+								"compatible-vendor-prefixes": "warning",
+								"display-property-grouping": true,
+								"duplicate-background-images": "warning",
+								"duplicate-properties": true,
+								"empty-rules": true,
+								"errors": true,
+								"fallback-colors": "warning",
+								"floats": "warning",
+								"font-faces": "warning",
+								"font-sizes": "warning",
+								"gradients": "warning",
+								"ids": "warning",
+								"import": "warning",
+								"important": "warning",
+								"known-properties": true,
+								"outline-none": "warning",
+								"overqualified-elements": "warning",
+								"qualified-headings": "warning",
+								"regex-selectors": "warning",
+								"rules-count": "warning",
+								"shorthand": "warning",
+								"star-property-hack": "warning",
+								"text-indent": "warning",
+								"underscore-property-hack": "warning",
+								"unique-headings": "warning",
+								"universal-selector": "warning",
+								"vendor-prefix": true,
+								"zero-units": "warning"
+							},
+							"gjslint_ignore":
+							[
+								110.0
+							],
+							"gjslint_options":
+							[
+							],
+							"javascript_linter": "jshint",
+							"jshint_options":
+							{
+								"browser": true,
+								"evil": true,
+								"regexdash": true,
+								"sub": true,
+								"trailing": true,
+								"wsh": true
+							},
+							"pep8": true,
+							"pep8_ignore":
+							[
+								"E501"
+							],
+							"perl_linter": "perlcritic",
+							"pyflakes_ignore":
+							[
+							],
+							"pyflakes_ignore_import_*": true,
+							"sublimelinter": true,
+							"sublimelinter_delay": 2.0,
+							"sublimelinter_disable":
+							[
+							],
+							"sublimelinter_executable_map":
+							{
+							},
+							"sublimelinter_fill_outlines": false,
+							"sublimelinter_gutter_marks": false,
+							"sublimelinter_mark_style": "outline",
+							"sublimelinter_notes": false,
+							"sublimelinter_objj_check_ascii": false,
+							"sublimelinter_popup_errors_on_save": false,
+							"sublimelinter_syntax_map":
+							{
+								"C++": "c",
+								"Python Django": "python",
+								"Ruby on Rails": "ruby"
+							},
+							"sublimelinter_wrap_find": true,
+							"syntax": "Packages/Text/Plain text.tmLanguage",
+							"tab_size": 3,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 469.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "client/client.go",
+					"settings":
+					{
+						"buffer_size": 3497,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2827,
+								2827
+							]
+						],
+						"settings":
+						{
+							"annotations":
+							[
+								"TODO",
+								"README",
+								"FIXME"
+							],
+							"csslint_options":
+							{
+								"adjoining-classes": "warning",
+								"box-model": true,
+								"box-sizing": "warning",
+								"compatible-vendor-prefixes": "warning",
+								"display-property-grouping": true,
+								"duplicate-background-images": "warning",
+								"duplicate-properties": true,
+								"empty-rules": true,
+								"errors": true,
+								"fallback-colors": "warning",
+								"floats": "warning",
+								"font-faces": "warning",
+								"font-sizes": "warning",
+								"gradients": "warning",
+								"ids": "warning",
+								"import": "warning",
+								"important": "warning",
+								"known-properties": true,
+								"outline-none": "warning",
+								"overqualified-elements": "warning",
+								"qualified-headings": "warning",
+								"regex-selectors": "warning",
+								"rules-count": "warning",
+								"shorthand": "warning",
+								"star-property-hack": "warning",
+								"text-indent": "warning",
+								"underscore-property-hack": "warning",
+								"unique-headings": "warning",
+								"universal-selector": "warning",
+								"vendor-prefix": true,
+								"zero-units": "warning"
+							},
+							"gjslint_ignore":
+							[
+								110.0
+							],
+							"gjslint_options":
+							[
+							],
+							"javascript_linter": "jshint",
+							"jshint_options":
+							{
+								"browser": true,
+								"evil": true,
+								"regexdash": true,
+								"sub": true,
+								"trailing": true,
+								"wsh": true
+							},
+							"pep8": true,
+							"pep8_ignore":
+							[
+								"E501"
+							],
+							"perl_linter": "perlcritic",
+							"pyflakes_ignore":
+							[
+							],
+							"pyflakes_ignore_import_*": true,
+							"sublimelinter": true,
+							"sublimelinter_delay": 2.0,
+							"sublimelinter_disable":
+							[
+							],
+							"sublimelinter_executable_map":
+							{
+							},
+							"sublimelinter_fill_outlines": false,
+							"sublimelinter_gutter_marks": false,
+							"sublimelinter_mark_style": "outline",
+							"sublimelinter_notes": false,
+							"sublimelinter_objj_check_ascii": false,
+							"sublimelinter_popup_errors_on_save": false,
+							"sublimelinter_syntax_map":
+							{
+								"C++": "c",
+								"Python Django": "python",
+								"Ruby on Rails": "ruby"
+							},
+							"sublimelinter_wrap_find": true,
+							"syntax": "Packages/Go/Go.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 2398.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "packet/packet.go",
+					"settings":
+					{
+						"buffer_size": 459,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								139,
+								139
 							]
 						],
 						"settings":
@@ -1242,8 +1989,36 @@
 		"selected_items":
 		[
 			[
+				"h",
+				"client/hub.go"
+			],
+			[
+				"pack",
+				"packet/packet.go"
+			],
+			[
+				"hub",
+				"client/hub.go"
+			],
+			[
+				"events",
+				"events/events.go"
+			],
+			[
+				"db",
+				"db/db.go"
+			],
+			[
 				"team",
 				"team/team.go"
+			],
+			[
+				"net",
+				"network/network.go"
+			],
+			[
+				"user",
+				"user/user.go"
 			],
 			[
 				"user.g",
@@ -1724,34 +2499,6 @@
 			[
 				"conf",
 				"config.php"
-			],
-			[
-				"settins",
-				"views/settings_accent.phtml"
-			],
-			[
-				"backgr",
-				"views/settings_background.phtml"
-			],
-			[
-				"accoun",
-				"models/accounts_model.php"
-			],
-			[
-				"secyr",
-				"libs/twig/lib/Twig/Sandbox/SecurityError.php"
-			],
-			[
-				"admin.",
-				"js/admin.js"
-			],
-			[
-				"ck-",
-				"styles/scss/kb-admin.scss"
-			],
-			[
-				"cache",
-				"libs/cache.php"
 			]
 		],
 		"width": 0.0
@@ -1775,7 +2522,7 @@
 	"show_minimap": false,
 	"show_open_files": false,
 	"show_tabs": true,
-	"side_bar_visible": true,
+	"side_bar_visible": false,
 	"side_bar_width": 207.0,
 	"status_bar_visible": true
 }

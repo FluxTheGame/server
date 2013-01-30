@@ -1,6 +1,7 @@
 package team
 
 import (
+	"bitbucket.org/jahfer/flux-middleman/network"
 	"bitbucket.org/jahfer/flux-middleman/user"
 	"bitbucket.org/jahfer/flux-middleman/db"
 	"strconv"
@@ -9,22 +10,44 @@ import (
 	"io"
 )
 
+// event objects
+type Merger struct {
+	TeamId1 int
+	TeamId2 int
+}
+
+var nextTeamId int = 1
+
+
 type Member struct {
 	User user.User
 	Conn io.Writer
 }
 
 type Manager struct {
-	Roster [/*team id*/][/*user index*/]Member
-	Queue chan Member
-	Unregister chan io.Writer
+	Roster map[int] []Member
+	Queue 		chan Member
+	Unregister 	chan io.Writer
+	LastId	   	chan int
+}
+
+func (t *Manager) Merge(teams Merger) {
+	// delete members
+	defer delete(t.Roster, teams.TeamId1)
+	defer delete(t.Roster, teams.TeamId2)
+
+	newTeamId := t.createNewTeam()
+
+	// move members to new team
+	t.Roster[newTeamId] = append(t.Roster[teams.TeamId1], t.Roster[teams.TeamId2]...)
 }
 
 func NewManager() Manager {
 	return Manager{
-		Roster: make([][]Member, 1),
+		Roster: make(map[int] []Member),
 		Queue: make(chan Member),
 		Unregister: make(chan io.Writer),
+		LastId: make(chan int),
 	}
 }
 
@@ -41,30 +64,13 @@ func (t Manager) MaxTeams() int {
 	return int(max)
 }
 
-// Boot cycle for team manager
-func (t *Manager) Run() {
-
-	t.Roster[0] = []Member{}
-
-	for {
-		select {
-		// add new client
-		case member := <-t.Queue:
-			t.addMember(member)
-		// user has disconnected
-		case deadClient := <-t.Unregister:
-			go t.removeMember(deadClient)
-		}
-	}
-}
-
 func (t *Manager) GetIndex(conn io.Writer) (int, int) {
-	for i, team := range t.Roster {
+	for teamId, team := range t.Roster {
 		// for all members
-		for j, m := range team {
+		for userId, member := range team {
 			// found disconnected member
-			if m.Conn == conn {
-				return i, j
+			if member.Conn == conn {
+				return teamId, userId
 			}
 		}
 	}
@@ -75,61 +81,87 @@ func (t *Manager) GetIndex(conn io.Writer) (int, int) {
 
 func (t *Manager) removeMember(conn io.Writer) {
 
-	teamId, id := t.GetIndex(conn)
+	teamId, userId := t.GetIndex(conn)
 
 	if teamId != -1 {
-		// swap index to delete with last element, then cut off last item
-		// ** does not maintain order!
-		t.Roster[teamId][id] = t.Roster[teamId][len(t.Roster[teamId])-1]
+		// delete user
+		t.Roster[teamId][userId] = t.Roster[teamId][len(t.Roster[teamId])-1]
 		t.Roster[teamId] = t.Roster[teamId][0:len(t.Roster[teamId])-1]
-
+		
 		teamKey := fmt.Sprintf("team:%v:users", teamId)
-		//fmt.Printf("Removing user %v from team %v\n", id, teamId)
-		//db.Redis.LRem(teamKey, 0, strconv.Itoa(id))
+		db.Redis.LRem(teamKey, 0, strconv.Itoa(userId))
 
-		// if team is now empty...and not the last team!
+		// remove team if empty
 		if len(t.Roster[teamId]) < 1 && len(t.Roster) > 1 {
-			// remove!
-			t.Roster[teamId] = t.Roster[len(t.Roster)-1]
-			t.Roster = t.Roster[0:len(t.Roster)-1]
-
+			delete(t.Roster, teamId)
 			db.Redis.Del(teamKey)
 		}
 	}
 }
 
-func (t *Manager) addMember(m Member) {
-
-	var teamId int
+func (t *Manager) addMember(m Member) (teamId int, err error) {
 
 	if len(t.Roster) < t.MaxTeams() {
-		// create a new collector
-		t.Roster = append(t.Roster, []Member{m})
-		teamId = len(t.Roster)-1
-
+		teamId = t.createNewTeam()
+		t.Roster[teamId] = []Member{ m }
 	} else {
-		// add users to existing collection
-		smallest := 0
-		for i, team := range t.Roster {
-			if len(team) < len(t.Roster[smallest]) {
-				smallest = i
-			}
-		}
+		smallest := t.getSmallestTeam()
+		// add users to existing team
 		t.Roster[smallest] = append(t.Roster[smallest], m)
 		teamId = smallest
 	}
 
 	// add user to team list in DB
 	key := fmt.Sprintf("team:%v:users", teamId)
-	push := db.Redis.RPush(key, strconv.Itoa(m.User.Id))
-	if err := push.Err(); err != nil {
-		panic(err)
-	}
-
+	db.Redis.RPush(key, strconv.Itoa(m.User.Id))
 	key = fmt.Sprintf("uid:%v:team", m.User.Id)
-	set := db.Redis.Set(key, strconv.Itoa(teamId))
-	if err := set.Err(); err != nil {
-		panic(err)
+	db.Redis.Set(key, strconv.Itoa(teamId))
+
+	return
+}
+
+func (t *Manager) getSmallestTeam() int {
+	smallest := 0
+	for key, team := range t.Roster {
+		if len(team) < len(t.Roster[smallest]) {
+			smallest = key
+		}
 	}
 
+	return smallest
+}
+
+func (t *Manager) createNewTeam() int {
+	// create a new collector
+	teamId := nextTeamId
+	nextTeamId++
+
+	msg := struct {
+		Name string `tcp:"name"`
+		Id   int    `tcp:"id"`
+	}{"server:collector:new", teamId}
+
+	network.TcpClients.Broadcast <- msg
+
+	return teamId
+}
+
+
+
+// Boot cycle for team manager
+func (t *Manager) Run() {
+
+	t.Roster[0] = []Member{}
+
+	for {
+		select {
+		// add new client
+		case member := <-t.Queue:
+			teamId, _ := t.addMember(member)
+			t.LastId <- teamId
+		// user has disconnected
+		case deadClient := <-t.Unregister:
+			go t.removeMember(deadClient)
+		}
+	}
 }

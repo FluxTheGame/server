@@ -35,13 +35,14 @@ func (em *Manager) HandleFunc(pattern string, handler eventHandlerFunc) {
 
 // execute stored callbacks for each event received
 func (em *Manager) Listener() {
+
 	for pkt := range em.Incoming {
 
 		// Dead packet; user has disconnected!
 		if pkt.Raw == nil {
 			// envoke disconnect callbacks
-			if callback, exists := em.handlers["disconnect"]; exists {
-				go callback(Event{ Name:"disconnect", Sender: pkt.Sender })
+			if callback, exists := em.handlers["user:disconnect"]; exists {
+				go callback(Event{ Name:"user:disconnect", Sender: pkt.Sender })
 			}
 			continue
 		}

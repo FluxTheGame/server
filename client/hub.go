@@ -32,24 +32,25 @@ func (h *Hub) Run() {
 
 		// add new client
 		case c := <-h.Register:
-			fmt.Println("-- client connected")
+			fmt.Printf("[NOTICE]\tclient connected\n")
 			h.clients[c] = true
 
 		// lost connection with client
 		case c := <-h.Unregister:
-			fmt.Println("-- client disconnected")
+			fmt.Printf("[NOTICE]\tclient disconnected\n")
 			delete(h.clients, c)
 			c.Close()
 
 		// message being piped in to relay to clients
 		case msg := <-h.Broadcast:
 			for c := range h.clients {
+				fmt.Printf("[SENDING]\t%+v\n", msg)
 				// format according to protocol
 				data := c.Format(msg)
 				// send for transmit
 				_, err := c.Write(data)
 				if err != nil {
-					fmt.Println("-- client lost connection")
+					fmt.Printf("[NOTICE]\tclient lost connection\n")
 					delete(h.clients, c)
 					c.Close()
 				}
