@@ -39,13 +39,6 @@ func main() {
 
 	network.Manager.HandleFunc("collector:merge", onCollectorMerge)
 
-	go func() {
-		time.Sleep(1 * time.Minute)
-		fmt.Println("Merging...")
-		teams.Merge(team.Merger{TeamId1: 0, TeamId2: 1})
-		fmt.Println("Merge complete!")
-	}()
-
 	go teams.Run()
 	network.Init()
 }
