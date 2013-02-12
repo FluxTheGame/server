@@ -5,12 +5,20 @@ import (
 	r "github.com/vmihailenco/redis"
 	"github.com/ziutek/mymysql/mysql"
 	_ "github.com/ziutek/mymysql/native"
+	"net"
 )
 
 var Redis *r.Client
 
 func Init() {
-	Redis = r.NewTCPClient("localhost:6379", "", -1)
+	srvAddr := "localhost:6379"
+
+	Redis = r.NewTCPClient(srvAddr, "", -1)
+
+	tcpAddr, _ := net.ResolveTCPAddr("tcp", srvAddr)
+	if _, err := net.DialTCP("tcp", nil, tcpAddr); err != nil {
+		panic(err)
+	}
 }
 
 func Close() {

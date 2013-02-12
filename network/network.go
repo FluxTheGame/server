@@ -9,6 +9,7 @@ import (
 	"net/http"
 	_ "time"
 	"fmt"
+	"os"
 )
 
 // store all client connections
@@ -116,6 +117,14 @@ func initTcpServer() {
 
 func initDb() {
 	fmt.Println(" -- Initializing Redis server on :6379")
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("[ERROR] Could not connect to Redis database")
+			os.Exit(1)
+		}
+	}()
+
 	db.Init()
 
 	set := db.Redis.Set("global:nextUserId", "0")

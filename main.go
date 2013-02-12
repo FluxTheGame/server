@@ -11,7 +11,6 @@ import (
 	"html/template"
 	"net/http"
 	"runtime"
-	"time"
 )
 
 var teams = team.NewManager()
@@ -63,9 +62,10 @@ func onUserJoin(e events.Event) interface{} {
 	//simpleToXna("user:join", u.Id)
 	msg := struct {
 		Name   string `tcp:"name"`
+		Username   string `tcp:"username"`
 		Id     int    `tcp:"id"`
 		TeamId int    `tcp:"teamId"`
-	}{"user:new", u.Id, assignedTeamId}
+	}{"user:new", u.Name, u.Id, assignedTeamId}
 	network.TcpClients.Broadcast <- msg
 
 	// reply to sencha with proper ID
