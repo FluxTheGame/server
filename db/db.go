@@ -6,6 +6,8 @@ import (
 	"github.com/ziutek/mymysql/mysql"
 	_ "github.com/ziutek/mymysql/native"
 	"net"
+	"time"
+	"os/exec"
 )
 
 var Redis *r.Client
@@ -16,8 +18,35 @@ func Init() {
 	Redis = r.NewTCPClient(srvAddr, "", -1)
 
 	tcpAddr, _ := net.ResolveTCPAddr("tcp", srvAddr)
+
 	if _, err := net.DialTCP("tcp", nil, tcpAddr); err != nil {
-		panic(err)
+		fmt.Printf(" [NOTICE]\tRedis server not connected.\n")
+		fmt.Printf(" [NOTICE]\tAttempting to boot up Redis server.\n")
+
+		response := make(chan bool, 1)
+
+		go bootRedisServer(response);
+
+		<-response
+		fmt.Printf(" [NOTICE]\tRedis server has connected.\n")
+	}
+}
+
+func bootRedisServer(resp chan bool) {
+	cmd := exec.Command("redis-server")
+
+	if err := cmd.Start(); err != nil {
+		fmt.Printf(" [ERROR]\tCould not connect to Redis server.\n")
+		fmt.Println(err.Error())
+		panic(1)
+	}
+
+	time.Sleep(50 * time.Millisecond)
+	resp <- true
+
+	if err := cmd.Wait(); err != nil {
+		fmt.Printf(" [ERROR]\tRedis server disconnected.\n")
+		panic(2);
 	}
 }
 

@@ -120,7 +120,7 @@ func initDb() {
 
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("[ERROR] Could not connect to Redis database")
+			fmt.Printf("[ERROR]\tRedis database connection not found.\n")
 			os.Exit(1)
 		}
 	}()
@@ -129,6 +129,7 @@ func initDb() {
 
 	set := db.Redis.Set("global:nextUserId", "0")
 	if err := set.Err(); err != nil {
+		fmt.Printf("[ERROR]\tCould not write to Redis database.\n")
 		panic(err)
 	}
 
