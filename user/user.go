@@ -11,8 +11,9 @@ type Id struct {
 }
 
 type User struct {
-	Name string `json:"name"`
-	Id   int    `json:"id"`
+	Name 	string 	`json:"name"`
+	Id  	int    	`json:"id"`
+	TeamId  int 	`json:"team_id"`
 }
 
 func (u *User) Save() error {

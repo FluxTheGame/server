@@ -4,6 +4,7 @@ import (
 	"bitbucket.org/jahfer/flux-middleman/network"
 	"bitbucket.org/jahfer/flux-middleman/user"
 	"bitbucket.org/jahfer/flux-middleman/db"
+	"image/color"
 	"strconv"
 	"math"
 	"fmt"
@@ -18,14 +19,13 @@ type Merger struct {
 
 var nextTeamId int = 1
 
-
 type Member struct {
 	User user.User
 	Conn io.Writer
 }
 
 type Manager struct {
-	Roster map[int] []Member
+	Roster 		map[int] []Member
 	Queue 		chan Member
 	Unregister 	chan io.Writer
 	LastId	   	chan int
@@ -64,28 +64,28 @@ func (t Manager) MaxTeams() int {
 	return int(max)
 }
 
-func (t *Manager) GetIndex(conn io.Writer) (int, int) {
+func (t *Manager) GetIndex(conn io.Writer) (int, int, int) {
 	for teamId, team := range t.Roster {
 		// for all members
-		for userId, member := range team {
+		for userIndex, member := range team {
 			// found disconnected member
 			if member.Conn == conn {
-				return teamId, userId
+				return teamId, member.User.Id, userIndex
 			}
 		}
 	}
 
 	// user not found
-	return -1, -1
+	return -1, -1, -1
 }
 
 func (t *Manager) removeMember(conn io.Writer) {
 
-	teamId, userId := t.GetIndex(conn)
+	teamId, userId, userIndex := t.GetIndex(conn)
 
 	if teamId != -1 {
 		// delete user
-		t.Roster[teamId][userId] = t.Roster[teamId][len(t.Roster[teamId])-1]
+		t.Roster[teamId][userIndex] = t.Roster[teamId][len(t.Roster[teamId])-1]
 		t.Roster[teamId] = t.Roster[teamId][0:len(t.Roster[teamId])-1]
 		
 		teamKey := fmt.Sprintf("team:%v:users", teamId)
@@ -136,10 +136,13 @@ func (t *Manager) createNewTeam() int {
 	teamId := nextTeamId
 	nextTeamId++
 
+	c := GetNextColor()
+
 	msg := struct {
 		Name string `tcp:"name"`
 		Id   int    `tcp:"id"`
-	}{"server:collector:new", teamId}
+		Color color.Color `tcp:"color"`
+	}{"server:collector:new", teamId, c}
 
 	network.TcpClients.Broadcast <- msg
 

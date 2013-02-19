@@ -4,17 +4,28 @@ import (
 	"image/color"
 )
 
-colorQueue  = make(chan color.Color, 4)
-activeColors = make(chan color.Color, 4)
+var colorQueue chan color.Color = make(chan color.Color, 15)
+var activeColors chan color.Color = make(chan color.Color, 15)
+
+var initialized bool = false
 
 func Init() {
-	colorQueue <- color.RGBA{255,0,0}
-	colorQueue <- color.RGBA{0,255,0}
-	colorQueue <- color.RGBA{0,0,255}
-	colorQueue <- color.RGBA{255,255,255}
+	colorQueue <- color.RGBA{255,0,0,255}
+	colorQueue <- color.RGBA{0,255,0,255}
+	colorQueue <- color.RGBA{0,0,255,255}
+	colorQueue <- color.RGBA{255,255,255,255}
+
+	initialized = true
 }
 
-func GetNext() {
-	color := <-colorQueue
-	activeColors <- color
+func GetNextColor() color.Color {
+	if initialized == false { Init() }
+
+	select {
+	case c := <-colorQueue:
+		activeColors <- c
+		return c
+	}
+
+	return color.Black
 }

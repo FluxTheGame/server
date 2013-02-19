@@ -56,16 +56,17 @@ func onUserJoin(e events.Event) interface{} {
 	// assign to team
 	member := team.Member{User: u, Conn: e.Sender}
 	teams.Queue <- member
+	// get team id
 	assignedTeamId := <-teams.LastId
+	member.User.TeamId = assignedTeamId
 
 	// forward to xna
-	//simpleToXna("user:join", u.Id)
 	msg := struct {
-		Name   string `tcp:"name"`
-		Username   string `tcp:"username"`
-		Id     int    `tcp:"id"`
-		TeamId int    `tcp:"teamId"`
-	}{"user:new", u.Name, u.Id, assignedTeamId}
+		Name   		string `tcp:"name"`
+		Id 			int    `tcp:"id"`
+		Username 	string `tcp:"username"`
+		TeamId 		int    `tcp:"teamId"`
+	}{"user:new", u.Id, u.Name, assignedTeamId}
 	network.TcpClients.Broadcast <- msg
 
 	// reply to sencha with proper ID
@@ -76,7 +77,7 @@ func onUserJoin(e events.Event) interface{} {
 }
 
 func onUserDisconnect(e events.Event) interface{} {
-	_, id := teams.GetIndex(e.Sender)
+	_, id, _ := teams.GetIndex(e.Sender)
 
 	teams.Unregister <- e.Sender
 
