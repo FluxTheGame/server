@@ -108,17 +108,27 @@ func (c *TcpClient) reflectValue(v reflect.Value) []byte {
 	return []byte("???")
 }
 
+type collector struct {
+	Name string
+	Id int
+	Points int
+}
+
 // Always have to keep an eye out for creepers...
 func (c *TcpClient) Listener(incoming chan packet.In) {
 	for {
 		buffer := make([]byte, 1024)
-		_, err := c.Conn.Read(buffer)
+		bytesRead, err := c.Conn.Read(buffer)
 		if err != nil {
 			break
 		}
 		//fmt.Println("[TCP] -> " + string(buffer[0:bytesRead]))
 
-		//packet := packet.In{Raw: buffer[0:bytesRead], Sender: c}
+		pkt := packet.In{Raw: buffer[0:bytesRead], Sender: c}
+
+		c := collector{}
+		packet.Unmarshal(pkt.Raw, &c)
+
 		//incoming <- packet
 	}
 	c.Conn.Close()
@@ -169,7 +179,8 @@ func (c *WebSocketClient) Sender() {
 
 		msg := string(message)
 
-		if err := websocket.Message.Send(c.Conn, msg); err != nil {			break
+		if err := websocket.Message.Send(c.Conn, msg); err != nil {
+			break
 		}
 	}
 	c.Conn.Close()
