@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/jahfer/flux-middleman/packet"
 	"bitbucket.org/jahfer/flux-middleman/team"
 	"bitbucket.org/jahfer/flux-middleman/user"
+	"bitbucket.org/jahfer/flux-middleman/tcp"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -175,14 +176,16 @@ func onCollectorMerge(e events.Event) interface{} {
 }
 
 func onCollectorBurst(e events.Event) interface{} {
-
+	// e.g. <- /name=collector:burst/id=4/points=156$
 	type collector struct {
 		Name string `tcp:"name"`
 		Id int 		`tcp:"id"`
 		Points int 	`tcp:"points"`
 	}
 	c := collector{}
-	packet.UnmarshalTCP(e.Args, &c)
+	tcp.Unmarshal(e.Args, &c)
+
+	fmt.Println(c)
 
 	return nil
 }

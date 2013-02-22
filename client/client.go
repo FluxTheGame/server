@@ -116,15 +116,10 @@ func (c *TcpClient) Listener(incoming chan packet.In) {
 		if err != nil {
 			break
 		}
-		//fmt.Println("[TCP] -> " + string(buffer[0:bytesRead]))
 
 		pkt := packet.In{Raw: buffer[0:bytesRead], Sender: c}
-
-		/*c := collector{}
-		packet.Unmarshal(pkt.Raw, &c)
-		fmt.Println(c)*/
-
 		incoming <- pkt
+		
 	}
 	c.Conn.Close()
 }
