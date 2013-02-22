@@ -37,6 +37,7 @@ func main() {
 	network.Manager.HandleFunc("user:disconnect", onUserDisconnect)
 
 	network.Manager.HandleFunc("collector:merge", onCollectorMerge)
+	network.Manager.HandleFunc("collector:burst", onCollectorBurst)
 
 	go teams.Run()
 	network.Init()
@@ -169,6 +170,21 @@ func onCollectorMerge(e events.Event) interface{} {
 	}
 
 	teams.Merge(toMerge)
+
+	return nil
+}
+
+func onCollectorBurst(e events.Event) interface{} {
+
+	type collector struct {
+		Name string `tcp:"name"`
+		Id int 		`tcp:"id"`
+		Points int 	`tcp:"points"`
+	}
+	c := collector{}
+	packet.UnmarshalTCP(e.Args, &c)
+
+	// main.collector{Name:"collector:burst", Id:4, Points:156}
 
 	return nil
 }

@@ -108,12 +108,6 @@ func (c *TcpClient) reflectValue(v reflect.Value) []byte {
 	return []byte("???")
 }
 
-type collector struct {
-	Name string
-	Id int
-	Points int
-}
-
 // Always have to keep an eye out for creepers...
 func (c *TcpClient) Listener(incoming chan packet.In) {
 	for {
@@ -126,10 +120,11 @@ func (c *TcpClient) Listener(incoming chan packet.In) {
 
 		pkt := packet.In{Raw: buffer[0:bytesRead], Sender: c}
 
-		c := collector{}
+		/*c := collector{}
 		packet.Unmarshal(pkt.Raw, &c)
+		fmt.Println(c)*/
 
-		//incoming <- packet
+		incoming <- pkt
 	}
 	c.Conn.Close()
 }

@@ -8,8 +8,8 @@ import (
 )
 
 type Event struct {
-	Name string          `json:"name"`
-	Args json.RawMessage `json:"args"`
+	Name string `json:"name"`
+	Args []byte `json:"args"`
 	Sender io.Writer
 }
 

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"strconv"
 	"encoding/json"
-	"fmt"
+	_ "fmt"
 )
 
 // What is received from a WebSocket
@@ -42,13 +42,15 @@ func (e *InvalidUnmarshalError) Error() string {
 // Right now, it only supports WS, due to JSON
 func Unmarshal(b []byte, v interface{}) (err error) {
 	if b[0] == '/' {
-		return unmarshalTCP(b, v)
+		//return unmarshalTCP(b, v)
+		return unmarshalTCPAsEvent(b, v)
 	}
 
 	return json.Unmarshal(b, v)
 }
 
-func unmarshalTCP(b []byte, v interface{}) (err error) {
+// Not worth the dev time to make a full unmarshaller :(
+func unmarshalTCPAsEvent(b []byte, v interface{}) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if _, ok := r.(runtime.Error); ok {
@@ -58,35 +60,71 @@ func unmarshalTCP(b []byte, v interface{}) (err error) {
 		}
 	}()
 
+	if len(b) < 5 {
+		return errors.New("Message too short. Malformed syntax.")
+	}
+
+	p := string(b)
+	messages := strings.Split(p, "$")
+	message := messages[0]
+
+	datamap := parseToMap(message)
+	
+	item := reflect.ValueOf(v).Elem()
+	kind := item.Kind()
+	
+	if kind == reflect.Slice {
+		item.Set(reflect.MakeSlice(item.Type(), 1, 1))
+	}
+
+	evt := item.Index(0)
+
+	//return matchMapToStruct(datamap, v)
+	evt.FieldByName("Name").SetString(datamap["name"])
+	evt.FieldByName("Args").SetBytes(b)
+
+	item.Index(0).Set(evt)
+
+	return nil
+}
+
+func parseToMap(raw string) (datamap map[string] string) {
+	datamap = make(map[string] string)
+
+	data := strings.Split(raw, "/")
+	for _, m := range data {
+		keyvalue := strings.Split(m, "=")
+		if len(keyvalue) == 2 {
+			datamap[keyvalue[0]] = keyvalue[1]
+		}
+	}
+
+	return
+}
+
+func matchMapToStruct(datamap map[string] string, v interface{}) (err error) {
+
 	rv := reflect.ValueOf(v)
 	pv := rv
 	if pv.Kind() != reflect.Ptr || pv.IsNil() {
 		return &InvalidUnmarshalError{reflect.TypeOf(v)}
 	}
 
-	if len(b) < 3 {
-		return errors.New("Message too small. Malformed syntax.")
-	}
-
 	st := pv.Elem()
 	typeOfData := st.Type()
 
-	p := string(b)
-	messages := strings.Split(p, "$")
-	message := messages[0]
-
-	tmpData := make(map[string] string)
-
-	data := strings.Split(message, "/")
-	for _, m := range data {
-		keyvalue := strings.Split(m, "=")
-		if len(keyvalue) == 2 {
-			tmpData[keyvalue[0]] = keyvalue[1]
-		}
-	}
-
 	for i := 0; i < st.NumField(); i++ {
-		if d, ok := tmpData[typeOfData.Field(i).Name]; ok {
+
+		var fieldname string
+
+		tag := typeOfData.Field(i).Tag.Get("tcp")
+		if tag != "" {
+			fieldname = tag
+		} else {
+			fieldname = typeOfData.Field(i).Name
+		}
+
+		if d, ok := datamap[fieldname]; ok {
 			switch st.Field(i).Kind() {
 			case reflect.String:
 				st.Field(i).SetString(d)
@@ -100,6 +138,27 @@ func unmarshalTCP(b []byte, v interface{}) (err error) {
 	}
 
 	return nil
+} 
 
+func UnmarshalTCP(b []byte, v interface{}) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if _, ok := r.(runtime.Error); ok {
+				panic(r)
+			}
+			err = r.(error)
+		}
+	}()
+
+	if len(b) < 3 {
+		return errors.New("Message too small. Malformed syntax.")
+	}
+
+	p := string(b)
+	messages := strings.Split(p, "$")
+	message := messages[0]
+
+	datamap := parseToMap(message)
+	return matchMapToStruct(datamap, v)
 }
 
