@@ -184,8 +184,6 @@ func onCollectorBurst(e events.Event) interface{} {
 	c := collector{}
 	packet.UnmarshalTCP(e.Args, &c)
 
-	// main.collector{Name:"collector:burst", Id:4, Points:156}
-
 	return nil
 }
 

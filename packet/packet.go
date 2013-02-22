@@ -23,21 +23,6 @@ type Out struct {
 	Message interface{} `json:"message"`
 }
 
-type InvalidUnmarshalError struct {
-	Type reflect.Type
-}
-
-func (e *InvalidUnmarshalError) Error() string {
-	if e.Type == nil {
-		return "tcp: Unmarshal(nil)"
-	}
-
-	if e.Type.Kind() != reflect.Ptr {
-		return "tcp: Unmarshal(non-pointer " + e.Type.String() + ")"
-	}
-	return "tcp: Unmarshal(nil " + e.Type.String() + ")"
-}
-
 // In theory, this would unmarshal a response from both TCP and WS
 // Right now, it only supports WS, due to JSON
 func Unmarshal(b []byte, v interface{}) (err error) {
@@ -49,25 +34,27 @@ func Unmarshal(b []byte, v interface{}) (err error) {
 	return json.Unmarshal(b, v)
 }
 
-// Not worth the dev time to make a full unmarshaller :(
-func unmarshalTCPAsEvent(b []byte, v interface{}) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			if _, ok := r.(runtime.Error); ok {
-				panic(r)
-			}
-			err = r.(error)
-		}
-	}()
+func UnmarshalTCP(b []byte, v interface{}) (err error) {
+	defer catchError()
 
-	if len(b) < 5 {
-		return errors.New("Message too short. Malformed syntax.")
+	if err := checkValid(b); err != nil {
+		return err
 	}
 
-	p := string(b)
-	messages := strings.Split(p, "$")
-	message := messages[0]
+	message := splitPackets(b)
+	datamap := parseToMap(message)
+	return matchMapToStruct(datamap, v)
+}
 
+// can't parse multi-level messages, so manually do it
+func unmarshalTCPAsEvent(b []byte, v interface{}) (err error) {
+	defer catchError()
+
+	if err := checkValid(b); err != nil {
+		return err
+	}
+
+	message := splitPackets(b)
 	datamap := parseToMap(message)
 	
 	item := reflect.ValueOf(v).Elem()
@@ -79,13 +66,20 @@ func unmarshalTCPAsEvent(b []byte, v interface{}) (err error) {
 
 	evt := item.Index(0)
 
-	//return matchMapToStruct(datamap, v)
 	evt.FieldByName("Name").SetString(datamap["name"])
 	evt.FieldByName("Args").SetBytes(b)
 
 	item.Index(0).Set(evt)
 
 	return nil
+}
+
+func splitPackets(raw []byte) (s string) {
+	p := string(b)
+	messages := strings.Split(p, "$")
+	s = messages[0]
+
+	return
 }
 
 func parseToMap(raw string) (datamap map[string] string) {
@@ -103,7 +97,6 @@ func parseToMap(raw string) (datamap map[string] string) {
 }
 
 func matchMapToStruct(datamap map[string] string, v interface{}) (err error) {
-
 	rv := reflect.ValueOf(v)
 	pv := rv
 	if pv.Kind() != reflect.Ptr || pv.IsNil() {
@@ -126,6 +119,8 @@ func matchMapToStruct(datamap map[string] string, v interface{}) (err error) {
 
 		if d, ok := datamap[fieldname]; ok {
 			switch st.Field(i).Kind() {
+			default:
+				return errors.New("Unsupported type in interface{} (not int or string)")
 			case reflect.String:
 				st.Field(i).SetString(d)
 			case reflect.Int:
@@ -133,32 +128,43 @@ func matchMapToStruct(datamap map[string] string, v interface{}) (err error) {
 				st.Field(i).SetInt(int64(digit))
 			}
 		} else {
-			return errors.New("Did not fulfill all members of structure.")
+			return errors.New("Did not fulfill all members of structure")
 		}
 	}
 
 	return nil
-} 
-
-func UnmarshalTCP(b []byte, v interface{}) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			if _, ok := r.(runtime.Error); ok {
-				panic(r)
-			}
-			err = r.(error)
-		}
-	}()
-
-	if len(b) < 3 {
-		return errors.New("Message too small. Malformed syntax.")
-	}
-
-	p := string(b)
-	messages := strings.Split(p, "$")
-	message := messages[0]
-
-	datamap := parseToMap(message)
-	return matchMapToStruct(datamap, v)
 }
 
+func catchError() {
+	if r := recover(); r != nil {
+		if _, ok := r.(runtime.Error); ok {
+			panic(r)
+		}
+		err = r.(error)
+	}
+}
+
+func checkValid(data []byte) (err error) {
+	if len(data) < 5 {
+		return errors.New("Message too small. Malformed syntax.")
+	}
+}
+
+
+
+
+
+type InvalidUnmarshalError struct {
+	Type reflect.Type
+}
+
+func (e *InvalidUnmarshalError) Error() string {
+	if e.Type == nil {
+		return "tcp: Unmarshal(nil)"
+	}
+
+	if e.Type.Kind() != reflect.Ptr {
+		return "tcp: Unmarshal(non-pointer " + e.Type.String() + ")"
+	}
+	return "tcp: Unmarshal(nil " + e.Type.String() + ")"
+}
