@@ -13,8 +13,8 @@ import (
 
 // event objects
 type Merger struct {
-	TeamId1 int
-	TeamId2 int
+	TeamId1 int `tcp:"team_1"`
+	TeamId2 int `tcp:"team_2"`
 }
 
 var nextTeamId int = 1
@@ -121,14 +121,17 @@ func (t *Manager) addMember(m Member) (teamId int, err error) {
 }
 
 func (t *Manager) getSmallestTeam() int {
-	smallest := 0
+	smallestSize := 10000
+	var smallestIndex int
+
 	for key, team := range t.Roster {
-		if len(team) < len(t.Roster[smallest]) {
-			smallest = key
+		if len(team) < smallestSize {
+			smallestSize  = len(team)
+			smallestIndex = key
 		}
 	}
 
-	return smallest
+	return smallestIndex
 }
 
 func (t *Manager) createNewTeam() int {

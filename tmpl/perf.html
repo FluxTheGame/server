@@ -3,56 +3,177 @@
 		<title>Performance Snapshot | Flux Server</title>
 		<style type="text/css">
 			body {
-				font-family: monospace;
+			    margin: 0;
+			    font-family: monospace;
+			    font-size: 14px;
+			    background-color: #ededed;
 			}
-			dt {
-				float: left;
-				font-weight: bold;
-				width: 100px;
-				clear: both;
+
+			.container {
+			    width: 960px;
+			    margin: 0 auto;
 			}
-			dl {
-				line-height: 1.5em;
+
+			h1, h2, h3 {
+			    font-family: sans-serif;
 			}
+
+			#page-header {
+			    background: #28282b;
+			    color: #fefefe;
+			    padding: 1px 20px;
+			    text-align: center;
+			    font-size: 0.6em;
+			}
+
+			#summary {
+			    float: left;
+			    width: 100%;
+			    margin-top: 20px;
+			    box-shadow: 2px 3px 5px #eee;
+			}
+
+			.sum-box {
+			    float: left;
+			    width: 278px;
+			    line-height: 1.7em;
+			    
+			    height: 130px;
+			    padding: 10px 20px;
+			    background-color: #fff;
+			    
+			    border: 1px solid #d0d0d0;
+			    border-right-color: #dedede;
+			    box-shadow: 1px 2px 3px #d8d8d8;
+			}
+
+			.sum-box:nth-child(2), .sum-box:nth-child(3)  {
+			    border-left: none;
+			}
+			.sum-box:nth-child(3) {
+			    border-right-color: #d0d0d0;
+			}
+			.sum-box:first-child {
+			    border-top-left-radius: 4px;
+			    border-bottom-left-radius: 4px;
+
+			} 
+
+			.sum-box:nth-child(3) {
+			    border-top-right-radius: 4px;
+			    border-bottom-right-radius: 4px;
+			}
+
+			.sum-box ul {
+			    padding: 0;
+			    margin: 0;
+			}
+
+			.sum-box li {
+			    list-style-type: none;
+			}
+
+			.sum-title {
+			    margin-bottom: 10px;
+			    font-size: 1.2em;
+			}
+
+			.num, .teamname {
+			    border-radius: 2px;
+			    padding: 0 5px 1px;
+			    background-color: #5fc055;
+			    color: #fff;
+			    font-weight: bold;
+			    box-shadow: 0 1px #eee, inset 0 0 2px #4a9643;
+			}
+
+			.teamname {
+				background-color: #b33f41;
+			    box-shadow: 0 1px #eee, inset 0 0 2px #8f3235;
+			}
+
+			.main-breakdown {
+			    margin-top: 20px;
+			    float: left;
+			    border: 1px solid #ddd;
+			    width: 917px;
+			    background-color: #fff;
+			    border-radius: 4px;
+			    border: 1px solid #d0d0d0;
+			    box-shadow: 1px 2px 3px #d8d8d8;
+			    padding: 10px 20px;
+			}
+
+			.main-breakdown ul {
+			    padding-left: 15px;
+			}
+			
+			.main-breakdown > ul > li {
+			     margin-bottom: 10px;
+			     line-height: 1.4em
+			}
+
+            .points {
+                color: #ccc;
+                background: transparent;
+                font-style: italic;
+            }
+
+
 		</style>
 	</head>
 	<body>
-		<h1>Performance Snapshot</h1>
 
-		<dl>
-			<h2>System</h2>
-			<dt>Go Routines</dt>
-				<dd>{{.NumGoroutine}}</dd>
-		</dl>
+		<header id="page-header">
+			<div class="container">
+				<h1>Flux Performance Snapshot</h1>
+			</div>
+		</header>	
 
-		<dl>
-			<h2>Connections</h2>
-			<dt>WebSocket</dt>
-				<dd>{{.WsNumConn}}</dd>
-			<dt>TCP</dt>
-				<dd>{{.TcpNumConn}}</dd>
-			<br>
-			<dt>Teams</dt>
-				<dd>{{.NumTeams}}</dd>
-			<dt>In Queue</dt>
-				<dd>{{.NumInQueue}}</dd>
-			<dt>Active</dt>
-				<dd>{{.NumActive}}</dd>
-		</dl>
+		<div id="summary">
+			<div class="container">
 
-		<h2>Teams</h2>
-		<ul>
-			{{range $index, $el := .Teams}}
-				<li>Team #{{$index}}
+				<div class="sum-box">
+					<h1 class="sum-title">Connections</h1>
 					<ul>
-						{{range $el}}
-							{{with .User}}
-								<li>[{{.Id}}] {{.Name}}</li>
-							{{end}}
+						<li><mark class="num">{{.WsNumConn}}</mark> WebSocket</li>
+						<li><mark class="num">{{.TcpNumConn}}</mark> TCP</li>
+					</ul>
+				</div>
+				
+				<div class="sum-box">
+					<h1 class="sum-title">System</h1>
+					<ul>
+						<li><mark class="num">{{.NumGoroutine}}</mark> threads</li>
+					</ul>
+				</div>
+
+				<div class="sum-box">
+					<h1 class="sum-title">Teams</h1>
+					<ul>
+						<li><mark class="num">{{.NumTeams}}</mark> team(s)</li>
+						<li><mark class="num">{{.NumInQueue}}</mark> in queue</li>
+						<li><mark class="num">{{.NumActive}}</mark> active players</li>
+					</ul>
+				</div>
+
+				<div class="main-breakdown">
+					<h1 class="sum-title">Team Breakdown</h1>
+					<ul>
+						{{range $index, $el := .Teams}}
+							<li><mark class="teamname">Team #{{$index}}</mark>
+								<ul>
+									{{range $el}}
+										{{with .User}}
+											<li>[{{.Id}}] {{.Name}} <mark class="points">({{.Points}})</mark></li>
+										{{end}}
+									{{end}}
+								</ul>
+							</li>
 						{{end}}
 					</ul>
-				</li>
-			{{end}}
-		</ul>
+				</div>
+			</div>
+		</div>
 	</body>
 </html>

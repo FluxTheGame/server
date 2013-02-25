@@ -2,6 +2,7 @@ package packet
 
 import (
 	"io"
+	"fmt"
 	"encoding/json"
 	"bitbucket.org/jahfer/flux-middleman/tcp"
 )
@@ -21,6 +22,13 @@ type Out struct {
 // In theory, this would unmarshal a response from both TCP and WS
 // Right now, it only supports WS, due to JSON
 func Unmarshal(b []byte, v interface{}) (err error) {
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("[NOTICE]\tCaught malformed message to server\n")
+		}
+	}()
+
 	if b[0] == '/' {
 		//return unmarshalTCP(b, v)
 		return tcp.UnmarshalAsEvent(b, v)

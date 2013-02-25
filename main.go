@@ -165,8 +165,10 @@ func perfHandler(w http.ResponseWriter, r *http.Request) {
 
 func onCollectorMerge(e events.Event) interface{} {
 
+	// /name=collector:merge/team_1=0/team_2=1$
+
 	toMerge := team.Merger{}
-	if err := json.Unmarshal(e.Args, &toMerge); err != nil {
+	if err := tcp.Unmarshal(e.Args, &toMerge); err != nil {
 		panic(err.Error())
 	}
 
@@ -176,7 +178,7 @@ func onCollectorMerge(e events.Event) interface{} {
 }
 
 func onCollectorBurst(e events.Event) interface{} {
-	// e.g. <- /name=collector:burst/id=4/points=156$
+	// e.g. <- /name=collector:burst/id=0/points=156$
 	type collector struct {
 		Name string `tcp:"name"`
 		Id int 		`tcp:"id"`
@@ -185,7 +187,12 @@ func onCollectorBurst(e events.Event) interface{} {
 	c := collector{}
 	tcp.Unmarshal(e.Args, &c)
 
-	fmt.Println(c)
+	if team, ok := teams.Roster[c.Id]; ok {
+		for i, member := range team {
+			member.User.Points += c.Points
+			teams.Roster[c.Id][i] = member
+		}
+	}
 
 	return nil
 }

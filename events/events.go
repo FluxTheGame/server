@@ -5,11 +5,12 @@ import (
 	"bitbucket.org/jahfer/flux-middleman/user"
 	"encoding/json"
 	"io"
+	"fmt"
 )
 
 type Event struct {
 	Name string `json:"name"`
-	Args []byte `json:"args"`
+	Args json.RawMessage `json:"args"`
 	Sender io.Writer
 }
 
@@ -49,8 +50,10 @@ func (em *Manager) Listener() {
 
 		// unmarshal incoming packet
 		var e []Event
+
 		if err := packet.Unmarshal(pkt.Raw, &e); err != nil {
-			panic(err.Error())
+			fmt.Printf("[NOTICE]\tCaught malformed message to server: %v\n", string(pkt.Raw))
+			continue
 		}
 		evt := e[0]
 		evt.Sender = pkt.Sender
