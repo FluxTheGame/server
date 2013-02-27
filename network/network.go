@@ -79,10 +79,12 @@ func initSocketServer() {
 
 	go WsClients.Run()
 
+	currentDirectory, _ := os.Getwd()
+
+	// serve static files for Sencha
+	http.Handle("/GameController/", http.FileServer(http.Dir(currentDirectory)))
+	// endpoint for websocket connections
 	http.Handle("/", websocket.Handler(wsHandler))
-	http.HandleFunc("/wstest", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "index.html")
-	})
 
 	globalInit <- true
 
