@@ -145,7 +145,7 @@ func (t *Manager) createNewTeam() int {
 		Name string `tcp:"name"`
 		Id   int    `tcp:"id"`
 		Color color.Color `tcp:"color"`
-	}{"server:collector:new", teamId, c}
+	}{"collector:new", teamId, c}
 
 	network.TcpClients.Broadcast <- msg
 

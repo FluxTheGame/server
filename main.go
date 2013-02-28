@@ -4,9 +4,9 @@ import (
 	"bitbucket.org/jahfer/flux-middleman/events"
 	"bitbucket.org/jahfer/flux-middleman/network"
 	"bitbucket.org/jahfer/flux-middleman/packet"
+	"bitbucket.org/jahfer/flux-middleman/tcp"
 	"bitbucket.org/jahfer/flux-middleman/team"
 	"bitbucket.org/jahfer/flux-middleman/user"
-	"bitbucket.org/jahfer/flux-middleman/tcp"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -64,10 +64,10 @@ func onUserJoin(e events.Event) interface{} {
 
 	// forward to xna
 	msg := struct {
-		Name   		string `tcp:"name"`
-		Id 			int    `tcp:"id"`
-		Username 	string `tcp:"username"`
-		TeamId 		int    `tcp:"teamId"`
+		Name     string `tcp:"name"`
+		Id       int    `tcp:"id"`
+		Username string `tcp:"username"`
+		TeamId   int    `tcp:"teamId"`
 	}{"user:new", u.Id, u.Name, assignedTeamId}
 	network.TcpClients.Broadcast <- msg
 
@@ -180,9 +180,9 @@ func onCollectorMerge(e events.Event) interface{} {
 func onCollectorBurst(e events.Event) interface{} {
 	// e.g. <- /name=collector:burst/id=0/points=156$
 	type collector struct {
-		Name string `tcp:"name"`
-		Id int 		`tcp:"id"`
-		Points int 	`tcp:"points"`
+		Name   string `tcp:"name"`
+		Id     int    `tcp:"id"`
+		Points int    `tcp:"points"`
 	}
 	c := collector{}
 	tcp.Unmarshal(e.Args, &c)
