@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/jahfer/flux-middleman/tcp"
 	"bitbucket.org/jahfer/flux-middleman/team"
 	"bitbucket.org/jahfer/flux-middleman/user"
+	"bitbucket.org/jahfer/flux-middleman/db"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -70,6 +71,8 @@ func onUserJoin(e events.Event) interface{} {
 		TeamId   int    `tcp:"teamId"`
 	}{"user:new", u.Id, u.Name, assignedTeamId}
 	network.TcpClients.Broadcast <- msg
+
+	simpleToXna("badge:join", u.Id)
 
 	// reply to sencha with proper ID
 	return packet.Out{
@@ -164,8 +167,7 @@ func perfHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func onCollectorMerge(e events.Event) interface{} {
-
-	// /name=collector:merge/team_1=0/team_2=1$
+	// e.g. /name=collector:merge/team_1=0/team_2=1$
 
 	toMerge := team.Merger{}
 	if err := tcp.Unmarshal(e.Args, &toMerge); err != nil {
@@ -178,7 +180,7 @@ func onCollectorMerge(e events.Event) interface{} {
 }
 
 func onCollectorBurst(e events.Event) interface{} {
-	// e.g. <- /name=collector:burst/id=0/points=156$
+	// e.g. /name=collector:burst/id=0/points=156$
 	type collector struct {
 		Name   string `tcp:"name"`
 		Id     int    `tcp:"id"`
@@ -188,9 +190,14 @@ func onCollectorBurst(e events.Event) interface{} {
 	tcp.Unmarshal(e.Args, &c)
 
 	if team, ok := teams.Roster[c.Id]; ok {
-		for i, member := range team {
-			member.User.Points += c.Points
-			teams.Roster[c.Id][i] = member
+		for _, member := range team {
+			userKey := fmt.Sprintf("uid:%v:points", member.User.Id)
+
+			if pts := db.Redis.Get(userKey); pts == nil {
+				simpleToXna("badge:firstComplete", member.User.Id)
+			}
+
+			db.Redis.IncrBy(userKey, int64(c.Points))
 		}
 	}
 

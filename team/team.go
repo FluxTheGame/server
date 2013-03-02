@@ -17,8 +17,6 @@ type Merger struct {
 	TeamId2 int `tcp:"team_2"`
 }
 
-var nextTeamId int = 1
-
 type Member struct {
 	User user.User
 	Conn io.Writer
@@ -37,6 +35,13 @@ func (t *Manager) Merge(teams Merger) {
 	defer delete(t.Roster, teams.TeamId2)
 
 	newTeamId := t.createNewTeam()
+
+	dest 	:= fmt.Sprintf("team:%v:users", newTeamId)
+	team1 	:= fmt.Sprintf("team:%v:users", teams.TeamId1)
+	team2 	:= fmt.Sprintf("team:%v:users", teams.TeamId2)
+
+	db.Redis.SUnionStore(dest, team1, team2)
+	db.Redis.Del(team1, team2)
 
 	// move members to new team
 	t.Roster[newTeamId] = append(t.Roster[teams.TeamId1], t.Roster[teams.TeamId2]...)
@@ -84,10 +89,19 @@ func (t *Manager) removeMember(conn io.Writer) {
 	teamId, userId, userIndex := t.GetIndex(conn)
 
 	if teamId != -1 {
+		// remove user from redis
+		userPointsKey := fmt.Sprintf("uid:%v:points", userId)
+		db.Redis.Del(userPointsKey)
+		userTeamKey := fmt.Sprintf("uid:%v:team", userId)
+		db.Redis.Del(userTeamKey)
+		userIdKey := fmt.Sprintf("username:%v:uid", t.Roster[teamId][userIndex].User.Name)
+		db.Redis.Del(userIdKey)
+
 		// delete user
 		t.Roster[teamId][userIndex] = t.Roster[teamId][len(t.Roster[teamId])-1]
 		t.Roster[teamId] = t.Roster[teamId][0:len(t.Roster[teamId])-1]
 		
+		// delete user from team
 		teamKey := fmt.Sprintf("team:%v:users", teamId)
 		db.Redis.LRem(teamKey, 0, strconv.Itoa(userId))
 
@@ -113,7 +127,7 @@ func (t *Manager) addMember(m Member) (teamId int, err error) {
 
 	// add user to team list in DB
 	key := fmt.Sprintf("team:%v:users", teamId)
-	db.Redis.RPush(key, strconv.Itoa(m.User.Id))
+	db.Redis.SAdd(key, strconv.Itoa(m.User.Id))
 	key = fmt.Sprintf("uid:%v:team", m.User.Id)
 	db.Redis.Set(key, strconv.Itoa(teamId))
 
@@ -135,9 +149,16 @@ func (t *Manager) getSmallestTeam() int {
 }
 
 func (t *Manager) createNewTeam() int {
-	// create a new collector
-	teamId := nextTeamId
-	nextTeamId++
+
+	defer db.Redis.Incr("global:nextTeamId")
+
+	get := db.Redis.Get("global:nextTeamId")
+	if err := get.Err(); err != nil {
+		panic(err)
+	}
+	val, _ := strconv.ParseInt(get.Val(), 10, 0)
+	teamId := int(val)
+
 
 	c := GetNextColor()
 

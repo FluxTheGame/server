@@ -30,6 +30,9 @@ func Init() {
 		<-response
 		fmt.Printf(" [NOTICE]\tRedis server has connected.\n")
 	}
+	
+	// clear stale data
+	Redis.FlushDb()
 }
 
 func bootRedisServer(resp chan bool) {
@@ -42,6 +45,7 @@ func bootRedisServer(resp chan bool) {
 	}
 
 	time.Sleep(50 * time.Millisecond)
+
 	resp <- true
 
 	if err := cmd.Wait(); err != nil {

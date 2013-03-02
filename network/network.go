@@ -5,6 +5,7 @@ import (
 	"bitbucket.org/jahfer/flux-middleman/events"
 	"bitbucket.org/jahfer/flux-middleman/db"
 	"code.google.com/p/go.net/websocket"
+	r "github.com/vmihailenco/redis"
 	"net"
 	"net/http"
 	_ "time"
@@ -129,8 +130,12 @@ func initDb() {
 
 	db.Init()
 
-	set := db.Redis.Set("global:nextUserId", "0")
-	if err := set.Err(); err != nil {
+	_, err := db.Redis.Pipelined(func(c *r.PipelineClient) {
+	    db.Redis.Set("global:nextUserId", "0")
+	    db.Redis.Set("global:nextTeamId", "1")
+	})
+
+	if err != nil {
 		fmt.Printf("[ERROR]\tCould not write to Redis database.\n")
 		panic(err)
 	}
