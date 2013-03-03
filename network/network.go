@@ -8,7 +8,6 @@ import (
 	r "github.com/vmihailenco/redis"
 	"net"
 	"net/http"
-	_ "time"
 	"fmt"
 	"os"
 )
@@ -82,6 +81,9 @@ func initSocketServer() {
 
 	currentDirectory, _ := os.Getwd()
 
+	// serve api
+	http.HandleFunc("/GameController/api/v1/Collector.json", handleApiCollector)
+	http.HandleFunc("/GameController/api/v1/Badges.json", handleApiBadges)
 	// serve static files for Sencha
 	http.Handle("/GameController/", http.FileServer(http.Dir(currentDirectory)))
 	// endpoint for websocket connections

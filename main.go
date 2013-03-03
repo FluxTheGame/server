@@ -1,13 +1,13 @@
 package main
 
 import (
+	"bitbucket.org/jahfer/flux-middleman/db"
 	"bitbucket.org/jahfer/flux-middleman/events"
 	"bitbucket.org/jahfer/flux-middleman/network"
 	"bitbucket.org/jahfer/flux-middleman/packet"
 	"bitbucket.org/jahfer/flux-middleman/tcp"
 	"bitbucket.org/jahfer/flux-middleman/team"
 	"bitbucket.org/jahfer/flux-middleman/user"
-	"bitbucket.org/jahfer/flux-middleman/db"
 	"encoding/json"
 	"fmt"
 	"html/template"
