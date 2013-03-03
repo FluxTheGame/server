@@ -48,7 +48,18 @@ func (t *Manager) Merge(teams Merger) {
 		db.Redis.Set(teamKey, strconv.Itoa(newTeamId))
 
 		badgesKey := fmt.Sprintf("uid:%v:badges", usr)
-		db.Redis.SAdd(badgesKey, "firstMerge")
+		res := db.Redis.SAdd(badgesKey, "firstMerge")
+
+		id, _ := strconv.Atoi(usr)
+		// not already in set
+		if res.Val() != 0 {
+			msg := struct {
+				Name string `tcp:"name"`
+				Id   int    `tcp:"id"`
+			}{"badge:firstMerge", id}
+
+			network.TcpClients.Broadcast <- msg
+		}
 	}
 
 	// move members to new team

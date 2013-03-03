@@ -195,10 +195,10 @@ func onCollectorBurst(e events.Event) interface{} {
 		for _, member := range team {
 			userKey := fmt.Sprintf("uid:%v:points", member.User.Id)
 
-			if pts := db.Redis.Get(userKey); pts == nil {
+			badgeKey := fmt.Sprintf("uid:%v:badges", member.User.Id)
+			res := db.Redis.SAdd(badgeKey, "firstComplete")
+			if res.Val() != 0 {
 				simpleToXna("badge:firstComplete", member.User.Id)
-				badgeKey := fmt.Sprintf("uid:%v:badges", member.User.Id)
-				db.Redis.SAdd(badgeKey, "firstComplete")
 			}
 
 			db.Redis.IncrBy(userKey, int64(c.Points))
