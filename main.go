@@ -73,6 +73,8 @@ func onUserJoin(e events.Event) interface{} {
 	network.TcpClients.Broadcast <- msg
 
 	simpleToXna("badge:join", u.Id)
+	badgeKey := fmt.Sprintf("uid:%v:badges", u.Id)
+	db.Redis.SAdd(badgeKey, "join")
 
 	// reply to sencha with proper ID
 	return packet.Out{
@@ -195,6 +197,8 @@ func onCollectorBurst(e events.Event) interface{} {
 
 			if pts := db.Redis.Get(userKey); pts == nil {
 				simpleToXna("badge:firstComplete", member.User.Id)
+				badgeKey := fmt.Sprintf("uid:%v:badges", member.User.Id)
+				db.Redis.SAdd(badgeKey, "firstComplete")
 			}
 
 			db.Redis.IncrBy(userKey, int64(c.Points))

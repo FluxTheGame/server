@@ -43,6 +43,14 @@ func (t *Manager) Merge(teams Merger) {
 	db.Redis.SUnionStore(dest, team1, team2)
 	db.Redis.Del(team1, team2)
 
+	for _, usr := range db.Redis.SMembers(dest).Val() {
+		teamKey := fmt.Sprintf("uid:%v:team", usr)
+		db.Redis.Set(teamKey, strconv.Itoa(newTeamId))
+
+		badgesKey := fmt.Sprintf("uid:%v:badges", usr)
+		db.Redis.SAdd(badgesKey, "firstMerge")
+	}
+
 	// move members to new team
 	t.Roster[newTeamId] = append(t.Roster[teams.TeamId1], t.Roster[teams.TeamId2]...)
 }
@@ -103,7 +111,7 @@ func (t *Manager) removeMember(conn io.Writer) {
 		
 		// delete user from team
 		teamKey := fmt.Sprintf("team:%v:users", teamId)
-		db.Redis.LRem(teamKey, 0, strconv.Itoa(userId))
+		db.Redis.SRem(teamKey, strconv.Itoa(userId))
 
 		// remove team if empty
 		if len(t.Roster[teamId]) < 1 && len(t.Roster) > 1 {
