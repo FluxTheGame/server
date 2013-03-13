@@ -8,6 +8,7 @@ import (
 	"bitbucket.org/jahfer/flux-middleman/tcp"
 	"bitbucket.org/jahfer/flux-middleman/team"
 	"bitbucket.org/jahfer/flux-middleman/user"
+	"bitbucket.org/jahfer/flux-middleman/helper"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -72,9 +73,10 @@ func onUserJoin(e events.Event) interface{} {
 	}{"user:new", u.Id, u.Name, assignedTeamId}
 	network.TcpClients.Broadcast <- msg
 
-	simpleToXna("badge:join", u.Id)
-	badgeKey := fmt.Sprintf("uid:%v:badges", u.Id)
-	db.Redis.SAdd(badgeKey, "join")
+	helper.SendBadge("join", u.Id)
+	//simpleToXna("badge:join", u.Id)
+	//badgeKey := fmt.Sprintf("uid:%v:badges", u.Id)
+	//db.Redis.SAdd(badgeKey, "join")
 
 	// reply to sencha with proper ID
 	return packet.Out{
@@ -183,6 +185,7 @@ func onCollectorMerge(e events.Event) interface{} {
 
 func onCollectorBurst(e events.Event) interface{} {
 	// e.g. /name=collector:burst/id=0/points=156$
+	
 	type collector struct {
 		Name   string `tcp:"name"`
 		Id     int    `tcp:"id"`
@@ -194,14 +197,9 @@ func onCollectorBurst(e events.Event) interface{} {
 	if team, ok := teams.Roster[c.Id]; ok {
 		for _, member := range team {
 			userKey := fmt.Sprintf("uid:%v:points", member.User.Id)
-
-			badgeKey := fmt.Sprintf("uid:%v:badges", member.User.Id)
-			res := db.Redis.SAdd(badgeKey, "firstComplete")
-			if res.Val() != 0 {
-				simpleToXna("badge:firstComplete", member.User.Id)
-			}
-
+			helper.SendBadge("firstComplete", member.User.Id)
 			db.Redis.IncrBy(userKey, int64(c.Points))
+			fmt.Printf("[NOTICE]\tUser %v +%v pts\n", member.User.Id, c.Points)
 		}
 	}
 

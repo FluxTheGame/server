@@ -2,6 +2,7 @@ package team
 
 import (
 	"bitbucket.org/jahfer/flux-middleman/network"
+	"bitbucket.org/jahfer/flux-middleman/helper"
 	"bitbucket.org/jahfer/flux-middleman/user"
 	"bitbucket.org/jahfer/flux-middleman/db"
 	"image/color"
@@ -31,39 +32,36 @@ type Manager struct {
 
 func (t *Manager) Merge(teams Merger) {
 	// delete members
-	defer delete(t.Roster, teams.TeamId1)
+	//defer delete(t.Roster, teams.TeamId1)
 	defer delete(t.Roster, teams.TeamId2)
 
-	newTeamId := t.createNewTeam()
+	//newTeamId := t.createNewTeam()
 
-	dest 	:= fmt.Sprintf("team:%v:users", newTeamId)
+	//dest 	:= fmt.Sprintf("team:%v:users", newTeamId)
 	team1 	:= fmt.Sprintf("team:%v:users", teams.TeamId1)
 	team2 	:= fmt.Sprintf("team:%v:users", teams.TeamId2)
+	defer db.Redis.Del(team2)
 
-	db.Redis.SUnionStore(dest, team1, team2)
-	db.Redis.Del(team1, team2)
+	db.Redis.SUnionStore(team1, team1, team2)
 
-	for _, usr := range db.Redis.SMembers(dest).Val() {
+	for _, usr := range db.Redis.SMembers(team1).Val() {
 		teamKey := fmt.Sprintf("uid:%v:team", usr)
-		db.Redis.Set(teamKey, strconv.Itoa(newTeamId))
-
-		badgesKey := fmt.Sprintf("uid:%v:badges", usr)
-		res := db.Redis.SAdd(badgesKey, "firstMerge")
+		db.Redis.Set(teamKey, strconv.Itoa(teams.TeamId1))
 
 		id, _ := strconv.Atoi(usr)
-		// not already in set
-		if res.Val() != 0 {
-			msg := struct {
-				Name string `tcp:"name"`
-				Id   int    `tcp:"id"`
-			}{"badge:firstMerge", id}
+		helper.SendBadge("firstMerge", id)
 
-			network.TcpClients.Broadcast <- msg
-		}
+		/*msg := struct {
+			Name 	string `tcp:"name"`
+			Id   	int    `tcp:"id"`
+			TeamId  int    `tcp:"team_id"`
+		}{"user:newTeamId", id, newTeamId}
+
+		network.TcpClients.Broadcast <- msg*/
 	}
 
 	// move members to new team
-	t.Roster[newTeamId] = append(t.Roster[teams.TeamId1], t.Roster[teams.TeamId2]...)
+	t.Roster[teams.TeamId1] = append(t.Roster[teams.TeamId1], t.Roster[teams.TeamId2]...)
 }
 
 func NewManager() Manager {
