@@ -21,6 +21,16 @@ func SendBadge(badge string, userId int) {
 	}
 }
 
+func SendPoints(amount int, userId int) {
+	msg := struct {
+		Name 	string `tcp:"name"`
+		Value 	int `tcp:"value"`
+		Id   	int    `tcp:"id"`
+	}{"user:getPoints", amount, userId}
+
+	network.TcpClients.Broadcast <- msg
+}
+
 func ToXna(evt string, id int) {
 	msg := struct {
 		Name string `tcp:"name"`

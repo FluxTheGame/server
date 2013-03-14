@@ -126,6 +126,7 @@ func (t *Manager) removeMember(conn io.Writer) {
 		if len(t.Roster[teamId]) < 1 && len(t.Roster) > 1 {
 			delete(t.Roster, teamId)
 			db.Redis.Del(teamKey)
+			helper.ToXna("collector:destroy", teamId)
 		}
 	}
 }

@@ -173,6 +173,8 @@ func perfHandler(w http.ResponseWriter, r *http.Request) {
 func onCollectorMerge(e events.Event) interface{} {
 	// e.g. /name=collector:merge/team_1=0/team_2=1$
 
+	fmt.Printf("%+v\n", e)
+
 	toMerge := team.Merger{}
 	if err := tcp.Unmarshal(e.Args, &toMerge); err != nil {
 		panic(err.Error())
@@ -183,6 +185,7 @@ func onCollectorMerge(e events.Event) interface{} {
 	return nil
 }
 
+// divide points by members
 func onCollectorBurst(e events.Event) interface{} {
 	// e.g. /name=collector:burst/id=0/points=156$
 	
@@ -200,6 +203,8 @@ func onCollectorBurst(e events.Event) interface{} {
 			helper.SendBadge("firstComplete", member.User.Id)
 			db.Redis.IncrBy(userKey, int64(c.Points))
 			fmt.Printf("[NOTICE]\tUser %v +%v pts\n", member.User.Id, c.Points)
+			// user:getPoints value = #
+			helper.SendPoints(c.Points, member.User.Id);
 		}
 	}
 
