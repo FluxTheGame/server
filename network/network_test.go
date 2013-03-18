@@ -28,15 +28,24 @@ func TestTcpConnection(t *testing.T) {
 
 }
 
+func wsConnSetup(srvAddr string) (config *websocket.Config, err error) {
+	tcpAddr, err := net.ResolveTCPAddr("tcp", srvAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	config, _ = websocket.NewConfig(fmt.Sprintf("ws://%s%s", tcpAddr, "/ws"), "http://localhost/ws")
+
+	return
+}
+
 func TestWebSocketConnection(t *testing.T) {
 
 	srvAddr := "localhost:8080"
-	tcpAddr, err := net.ResolveTCPAddr("tcp", srvAddr)
+	config, err := wsConnSetup(srvAddr)
 	if err != nil {
 		t.Errorf("Could not find TCP address:", err.Error())
 	}
-
-	config, _ := websocket.NewConfig(fmt.Sprintf("ws://%s%s", tcpAddr, "/"), "http://localhost")
 
 	client, err := net.Dial("tcp", srvAddr)
 	if err != nil {
@@ -52,27 +61,36 @@ func TestWebSocketConnection(t *testing.T) {
 	//msg := []byte("hello, world\n")
 	msg := []byte(`[{
 		"name": "user:join", 
-		"args": {"id": 3, "x": 13, "y": 306}
+		"args": {"id": -1}
 	}]`)
 
 	if _, err := conn.Write(msg); err != nil {
 		t.Errorf("Write: %v", err)
 	}
 
-	/*var actual_msg = make([]byte, 512)
-	bytesRead, err := conn.Read(actual_msg)
-	if err != nil {
-		t.Errorf("Read: %v", err)
-	}
-
-	actual_msg = actual_msg[0:bytesRead]
-	var resp []packet.Out
-
-	err = json.Unmarshal(actual_msg, &resp)
-	if err != nil {
-		t.Fatal("Packet sent from server not of type packet.Out", err.Error())
-	}*/
-
 	conn.Close()
 
+}
+
+func BenchmarkWebSocketConnection(b *testing.B) {
+
+	srvAddr := "localhost:8080"
+	config, _ := wsConnSetup(srvAddr)
+
+	for i:=0; i<b.N; i++ {
+
+		client, _ := net.Dial("tcp", srvAddr)
+
+		conn, _ := websocket.NewClient(config, client)
+
+		//msg := []byte("hello, world\n")
+		msg := []byte(`[{
+			"name": "user:join", 
+			"args": {"id": -1}
+		}]`)
+
+		conn.Write(msg)
+
+		conn.Close()
+	}
 }

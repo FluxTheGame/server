@@ -17,14 +17,16 @@ type User struct {
 	Points  int 	`json:"points"`
 }
 
-func (u *User) Save() error {
+func (u *User) Save() (error, error) {
 	// set ID for user
 	u.Id = getNextId()
 	// store user in DB
 	key := fmt.Sprintf("username:%v:uid", u.Name)
-	set := db.Redis.Set(key, strconv.Itoa(u.Id))
+	setId := db.Redis.Set(key, strconv.Itoa(u.Id))
+	usernameKey := fmt.Sprintf("uid:%v:username", u.Id)
+	setName := db.Redis.Set(usernameKey, u.Name)
 	
-	return set.Err()
+	return setId.Err(), setName.Err()
 }
 
 type Coords struct {
@@ -36,7 +38,7 @@ type Coords struct {
 func getNextId() (id int) {
 	get := db.Redis.Get("global:nextUserId")
 	if err := get.Err(); err != nil {
-		panic(err)
+		panic("Could not get next user id " + err.Error())
 	}
 
 	defer db.Redis.Incr("global:nextUserId")

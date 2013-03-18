@@ -111,8 +111,15 @@ func (t *Manager) removeMember(conn io.Writer) {
 		db.Redis.Del(userPointsKey)
 		userTeamKey := fmt.Sprintf("uid:%v:team", userId)
 		db.Redis.Del(userTeamKey)
+
+		if len(t.Roster[teamId]) <= userIndex {
+			panic("USER NO LONGER IN PROPER INDEX")
+		}
+
 		userIdKey := fmt.Sprintf("username:%v:uid", t.Roster[teamId][userIndex].User.Name)
 		db.Redis.Del(userIdKey)
+		usernameKey := fmt.Sprintf("uid:%v:username", t.Roster[teamId][userIndex].User.Name)
+		db.Redis.Del(usernameKey)
 
 		// delete user
 		t.Roster[teamId][userIndex] = t.Roster[teamId][len(t.Roster[teamId])-1]

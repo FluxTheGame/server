@@ -3,12 +3,12 @@ package main
 import (
 	"bitbucket.org/jahfer/flux-middleman/db"
 	"bitbucket.org/jahfer/flux-middleman/events"
+	"bitbucket.org/jahfer/flux-middleman/helper"
 	"bitbucket.org/jahfer/flux-middleman/network"
 	"bitbucket.org/jahfer/flux-middleman/packet"
 	"bitbucket.org/jahfer/flux-middleman/tcp"
 	"bitbucket.org/jahfer/flux-middleman/team"
 	"bitbucket.org/jahfer/flux-middleman/user"
-	"bitbucket.org/jahfer/flux-middleman/helper"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -35,7 +35,9 @@ func main() {
 	network.Manager.HandleFunc("user:touch", onUserTouch)
 	network.Manager.HandleFunc("user:touchEnd", onUserTouchEnd)
 	network.Manager.HandleFunc("user:bloat", onUserBloat)
+	network.Manager.HandleFunc("user:bloatEnd", onUserBloatEnd)
 	network.Manager.HandleFunc("user:pinch", onUserPinch)
+	network.Manager.HandleFunc("user:pinchEnd", onUserPinchEnd)
 	network.Manager.HandleFunc("user:attack", onUserAttack)
 	network.Manager.HandleFunc("user:disconnect", onUserDisconnect)
 
@@ -53,8 +55,8 @@ func onUserJoin(e events.Event) interface{} {
 		panic(err.Error())
 	}
 
-	if err := u.Save(); err != nil {
-		panic(err)
+	if err, err2 := u.Save(); err != nil || err2 != nil {
+		panic(err.Error() + err2.Error())
 	}
 
 	// assign to team
@@ -128,10 +130,24 @@ func onUserBloat(e events.Event) interface{} {
 	return nil
 }
 
+func onUserBloatEnd(e events.Event) interface{} {
+	u := events.GetUserId(e)
+	// forward to XNA
+	simpleToXna("user:bloatEnd", u.Id)
+	return nil
+}
+
 func onUserPinch(e events.Event) interface{} {
 	u := events.GetUserId(e)
 	// forward to XNA
 	simpleToXna("user:pinch", u.Id)
+	return nil
+}
+
+func onUserPinchEnd(e events.Event) interface{} {
+	u := events.GetUserId(e)
+	// forward to XNA
+	simpleToXna("user:pinchEnd", u.Id)
 	return nil
 }
 
@@ -188,7 +204,7 @@ func onCollectorMerge(e events.Event) interface{} {
 // divide points by members
 func onCollectorBurst(e events.Event) interface{} {
 	// e.g. /name=collector:burst/id=0/points=156$
-	
+
 	type collector struct {
 		Name   string `tcp:"name"`
 		Id     int    `tcp:"id"`
@@ -198,13 +214,15 @@ func onCollectorBurst(e events.Event) interface{} {
 	tcp.Unmarshal(e.Args, &c)
 
 	if team, ok := teams.Roster[c.Id]; ok {
+		pts := c.Points / len(team)
+
 		for _, member := range team {
 			userKey := fmt.Sprintf("uid:%v:points", member.User.Id)
 			helper.SendBadge("firstComplete", member.User.Id)
-			db.Redis.IncrBy(userKey, int64(c.Points))
-			fmt.Printf("[NOTICE]\tUser %v +%v pts\n", member.User.Id, c.Points)
+			db.Redis.IncrBy(userKey, int64(pts))
+			fmt.Printf("[NOTICE]\tUser %v +%v pts\n", member.User.Id, pts)
 			// user:getPoints value = #
-			helper.SendPoints(c.Points, member.User.Id);
+			helper.SendPoints(pts, member.User.Id)
 		}
 	}
 
