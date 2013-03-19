@@ -10,20 +10,21 @@ import (
 func handleApiCollector(w http.ResponseWriter, r *http.Request) {
 	out := json.NewEncoder(w)
 
-	userId := r.FormValue("id")
-	teamId := db.Redis.Get("uid:" + userId + ":team")
-	if err := teamId.Err(); err != nil {
+	teamId := r.FormValue("id")
+	//userId := r.FormValue("id")
+	teamCheck := db.Redis.SCard("team:" + teamId + ":users")
+	if err := teamCheck.Err(); err != nil || teamCheck.Val() == 0 {
 		out.Encode(struct {
 			Error string
-		}{"User or team not found."})
+		}{"Team not found: " + teamId})
 		return
 	}
 
-	teamPrefix := fmt.Sprintf("team:%v:", teamId.Val())
+	teamPrefix := fmt.Sprintf("team:%v:", teamId)
 
-	health := db.Redis.Get(teamPrefix + "health")
-	fill := db.Redis.Get(teamPrefix + "fill")
-	capacity := db.Redis.Get(teamPrefix + "capacity")
+	_ = db.Redis.Get(teamPrefix + "health")
+	_ = db.Redis.Get(teamPrefix + "fill")
+	_ = db.Redis.Get(teamPrefix + "capacity")
 	teamMembers := db.Redis.SMembers(teamPrefix + "users")
 
 	var users []string
@@ -37,12 +38,12 @@ func handleApiCollector(w http.ResponseWriter, r *http.Request) {
 		Fill string `json:"fill"`
 		Capacity string `json:"cap"`
 		Team []string `json:"team"`
-	}{health.Val(), fill.Val(), capacity.Val(), users}
+		Id string `json:"id"`
+	}{"100","10","100",users,teamId}//{health.Val(), fill.Val(), capacity.Val(), users, teamId}
 
 	obj := struct {
-		UserId string `json:"id"`
 		Collector interface{} `json:"collector"`
-	}{userId, col}
+	}{col}
 
 	out.Encode(obj)
 }

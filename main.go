@@ -82,8 +82,8 @@ func onUserJoin(e events.Event) interface{} {
 
 	// reply to sencha with proper ID
 	return packet.Out{
-		Name:    "user:id",
-		Message: user.Id{u.Id},
+		Name:    "user:info",
+		Message: member.User,
 	}
 }
 
@@ -201,7 +201,6 @@ func onCollectorMerge(e events.Event) interface{} {
 	return nil
 }
 
-// divide points by members
 func onCollectorBurst(e events.Event) interface{} {
 	// e.g. /name=collector:burst/id=0/points=156$
 

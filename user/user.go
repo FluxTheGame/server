@@ -8,6 +8,7 @@ import (
 
 type Id struct {
 	Id int `json:"id"`
+	TeamId int `json:"team_id"`
 }
 
 type User struct {

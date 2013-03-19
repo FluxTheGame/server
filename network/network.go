@@ -82,8 +82,8 @@ func initSocketServer() {
 	currentDirectory, _ := os.Getwd()
 
 	// serve api
-	http.HandleFunc("/GameController/api/v1/Collector.json", handleApiCollector)
-	http.HandleFunc("/GameController/api/v1/Badges.json", handleApiBadges)
+	http.HandleFunc("/api/v1/Collector.json", handleApiCollector)
+	http.HandleFunc("/api/v1/Badges.json", handleApiBadges)
 	// endpoint for websocket connections
 	http.Handle("/ws", websocket.Handler(wsHandler))
 	// serve static files for Sencha
