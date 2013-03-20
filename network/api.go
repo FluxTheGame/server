@@ -11,7 +11,6 @@ func handleApiCollector(w http.ResponseWriter, r *http.Request) {
 	out := json.NewEncoder(w)
 
 	teamId := r.FormValue("id")
-	//userId := r.FormValue("id")
 	teamCheck := db.Redis.SCard("team:" + teamId + ":users")
 	if err := teamCheck.Err(); err != nil || teamCheck.Val() == 0 {
 		out.Encode(struct {
@@ -28,10 +27,13 @@ func handleApiCollector(w http.ResponseWriter, r *http.Request) {
 	teamMembers := db.Redis.SMembers(teamPrefix + "users")
 
 	var users []string
-	for id := range teamMembers.Val() {
+	for _, id := range teamMembers.Val() {
 		userIdKey := fmt.Sprintf("uid:%v:username", id)
+		fmt.Printf("[API:USERS]\t%v\n", id)
 		users = append(users, db.Redis.Get(userIdKey).Val())
 	}
+	
+	fmt.Printf("[API:USERNAMES]\t%v\n", users)
 
 	col := struct {
 		Health string `json:"health"`

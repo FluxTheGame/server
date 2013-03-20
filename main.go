@@ -2,6 +2,7 @@ package main
 
 import (
 	"bitbucket.org/jahfer/flux-middleman/db"
+	r "github.com/vmihailenco/redis"
 	"bitbucket.org/jahfer/flux-middleman/events"
 	"bitbucket.org/jahfer/flux-middleman/helper"
 	"bitbucket.org/jahfer/flux-middleman/network"
@@ -14,6 +15,8 @@ import (
 	"html/template"
 	"net/http"
 	"runtime"
+	"time"
+	"strconv"
 )
 
 var teams = team.NewManager()
@@ -40,6 +43,7 @@ func main() {
 	network.Manager.HandleFunc("user:pinchEnd", onUserPinchEnd)
 	network.Manager.HandleFunc("user:attack", onUserAttack)
 	network.Manager.HandleFunc("user:disconnect", onUserDisconnect)
+	network.Manager.HandleFunc("user:heartbeat", onUserHeartbeat)
 
 	network.Manager.HandleFunc("collector:merge", onCollectorMerge)
 	network.Manager.HandleFunc("collector:burst", onCollectorBurst)
@@ -49,14 +53,21 @@ func main() {
 }
 
 func onUserJoin(e events.Event) interface{} {
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("[ERROR]\t%v\n", r)
+		}
+	}()
+
 	// get incoming data in format of user.Id
 	u := user.User{}
 	if err := json.Unmarshal(e.Args, &u); err != nil {
-		panic(err.Error())
+		fmt.Printf("[ERROR]\tCould not unmarshal new user. " + err.Error() + "\n")
 	}
 
 	if err, err2 := u.Save(); err != nil || err2 != nil {
-		panic(err.Error() + err2.Error())
+		fmt.Printf("[ERROR]\tCould not save user. " + err.Error() + " " + err2.Error() + "\n")
 	}
 
 	// assign to team
@@ -76,15 +87,27 @@ func onUserJoin(e events.Event) interface{} {
 	network.TcpClients.Broadcast <- msg
 
 	helper.SendBadge("join", u.Id)
-	//simpleToXna("badge:join", u.Id)
-	//badgeKey := fmt.Sprintf("uid:%v:badges", u.Id)
-	//db.Redis.SAdd(badgeKey, "join")
 
 	// reply to sencha with proper ID
 	return packet.Out{
 		Name:    "user:info",
 		Message: member.User,
 	}
+}
+
+func onUserHeartbeat(e events.Event) interface{} {
+	u := events.GetUserId(e)
+
+	score := float64(time.Now().Unix())
+
+	heartbeat := r.Z{
+		score,
+		strconv.Itoa(u.Id),
+	}
+
+	db.Redis.ZAdd("global:clients", heartbeat)
+	
+	return nil
 }
 
 func onUserDisconnect(e events.Event) interface{} {
@@ -202,7 +225,7 @@ func onCollectorMerge(e events.Event) interface{} {
 }
 
 func onCollectorBurst(e events.Event) interface{} {
-	// e.g. /name=collector:burst/id=0/points=156$
+	// e.g. /name=collector:burst/id=0/points=155$
 
 	type collector struct {
 		Name   string `tcp:"name"`
@@ -218,10 +241,20 @@ func onCollectorBurst(e events.Event) interface{} {
 		for _, member := range team {
 			userKey := fmt.Sprintf("uid:%v:points", member.User.Id)
 			helper.SendBadge("firstComplete", member.User.Id)
-			db.Redis.IncrBy(userKey, int64(pts))
-			fmt.Printf("[NOTICE]\tUser %v +%v pts\n", member.User.Id, pts)
-			// user:getPoints value = #
+			totalPts := db.Redis.IncrBy(userKey, int64(pts))
 			helper.SendPoints(pts, member.User.Id)
+
+			toApp := packet.Out{
+				Name:    "user:getPoints",
+				Message: totalPts.Val(),
+			}
+
+			encoded, err := json.Marshal(toApp)
+			if err != nil {
+				panic(err)
+			}
+
+			member.Conn.Write(encoded)
 		}
 	}
 

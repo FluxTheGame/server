@@ -2,12 +2,12 @@ package helper
 
 import (
 	"bitbucket.org/jahfer/flux-middleman/network"
-	_ "bitbucket.org/jahfer/flux-middleman/db"
-	_ "fmt"
+	"bitbucket.org/jahfer/flux-middleman/db"
+	"fmt"
 )
 
 func SendBadge(badge string, userId int) {
-	/*msg := struct {
+	msg := struct {
 		Name string `tcp:"name"`
 		Badge string `tcp:"type"`
 		Id   int    `tcp:"id"`
@@ -18,10 +18,10 @@ func SendBadge(badge string, userId int) {
 
 	if res.Val() != 0 {
 		network.TcpClients.Broadcast <- msg
-	}*/
+	}
 }
 
-func SendPoints(amount int, userId int) {
+func SendPoints(amount, userId int) {
 	msg := struct {
 		Name 	string `tcp:"name"`
 		Value 	int `tcp:"value"`

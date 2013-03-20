@@ -6,6 +6,8 @@ import (
 	"bitbucket.org/jahfer/flux-middleman/db"
 	"code.google.com/p/go.net/websocket"
 	r "github.com/vmihailenco/redis"
+	"strconv"
+	"time"
 	"net"
 	"net/http"
 	"fmt"
@@ -28,6 +30,21 @@ func Init() {
 
 	go initTcpServer()
 	go initSocketServer()
+
+	//ZRANGEBYSCORE global:clients -inf time.Now().Sub(100 * time.Seconds).Unix()
+	// ZRangeByScore(key string, min, max string, offset, count int64)
+
+	// get every client that has been dead for at least 100 seconds...stupid Go precision
+	go func() {
+		ticker := time.NewTicker(5 * time.Second)
+
+		for {
+			select {
+			case <-ticker.C:
+				fmt.Printf("EXPIRED USERS: %v\n", db.Redis.ZRangeByScore("global:clients", "-inf", strconv.FormatInt(time.Now().Unix() - 5, 10), 0, -1).Val())
+			}
+		}
+	}()
 
 	go initDb()
 	defer db.Close()

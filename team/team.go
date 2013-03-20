@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"math"
 	"fmt"
+	
 	"io"
 )
 
@@ -50,14 +51,6 @@ func (t *Manager) Merge(teams Merger) {
 
 		id, _ := strconv.Atoi(usr)
 		helper.SendBadge("firstMerge", id)
-
-		/*msg := struct {
-			Name 	string `tcp:"name"`
-			Id   	int    `tcp:"id"`
-			TeamId  int    `tcp:"team_id"`
-		}{"user:newTeamId", id, newTeamId}
-
-		network.TcpClients.Broadcast <- msg*/
 	}
 
 	// move members to new team

@@ -75,6 +75,12 @@ func (em *Manager) Listener() {
 
 // unmarshal an Event to strip just the user id information
 func GetUserId(e Event) user.Id {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("[ERROR]\t%v\n", r)
+		}
+	}()
+
 	u := user.Id{}
 	if err := json.Unmarshal(e.Args, &u); err != nil {
 		panic(err.Error())
