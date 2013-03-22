@@ -18,14 +18,16 @@ func Init() {
 	initialized = true
 }
 
-func GetNextColor() color.Color {
+func GetNextColor() (col color.Color) {
 	if initialized == false { Init() }
 
 	select {
 	case c := <-colorQueue:
 		activeColors <- c
-		return c
+		col = c
+	default:
+		col = color.Black
 	}
 
-	return color.Black
+	return
 }

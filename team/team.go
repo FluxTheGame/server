@@ -9,15 +9,8 @@ import (
 	"strconv"
 	"math"
 	"fmt"
-	
 	"io"
 )
-
-// event objects
-type Merger struct {
-	TeamId1 int `tcp:"team_1"`
-	TeamId2 int `tcp:"team_2"`
-}
 
 type Member struct {
 	User user.User
@@ -29,32 +22,6 @@ type Manager struct {
 	Queue 		chan Member
 	Unregister 	chan io.Writer
 	LastId	   	chan int
-}
-
-func (t *Manager) Merge(teams Merger) {
-	// delete members
-	//defer delete(t.Roster, teams.TeamId1)
-	defer delete(t.Roster, teams.TeamId2)
-
-	//newTeamId := t.createNewTeam()
-
-	//dest 	:= fmt.Sprintf("team:%v:users", newTeamId)
-	team1 	:= fmt.Sprintf("team:%v:users", teams.TeamId1)
-	team2 	:= fmt.Sprintf("team:%v:users", teams.TeamId2)
-	defer db.Redis.Del(team2)
-
-	db.Redis.SUnionStore(team1, team1, team2)
-
-	for _, usr := range db.Redis.SMembers(team1).Val() {
-		teamKey := fmt.Sprintf("uid:%v:team", usr)
-		db.Redis.Set(teamKey, strconv.Itoa(teams.TeamId1))
-
-		id, _ := strconv.Atoi(usr)
-		helper.SendBadge("firstMerge", id)
-	}
-
-	// move members to new team
-	t.Roster[teams.TeamId1] = append(t.Roster[teams.TeamId1], t.Roster[teams.TeamId2]...)
 }
 
 func NewManager() Manager {
@@ -79,7 +46,7 @@ func (t Manager) MaxTeams() int {
 	return int(max)
 }
 
-func (t *Manager) GetIndex(conn io.Writer) (int, int, int) {
+func (t Manager) GetIndex(conn io.Writer) (int, int, int) {
 	for teamId, team := range t.Roster {
 		// for all members
 		for userIndex, member := range team {
@@ -94,29 +61,69 @@ func (t *Manager) GetIndex(conn io.Writer) (int, int, int) {
 	return -1, -1, -1
 }
 
-func (t *Manager) removeMember(conn io.Writer) {
+func (t Manager) GetUserIndex(teamId, userId int) int {
+	for i, member := range t.Roster[teamId] {
+		if member.User.Id == userId {
+			return i
+		}
+	}
 
+	return -1
+}
+
+func (t *Manager) ReturnToQueue(teamId int) {
+
+	members := t.Roster[teamId][0:]
+	t.removeTeam(teamId)
+
+	for _, member := range members {
+		fmt.Println("Returning to queue...")
+		// add user to team list in DB
+		key := fmt.Sprintf("team:%v:users", teamId)
+		db.Redis.SRem(key, strconv.Itoa(member.User.Id))
+
+		t.Queue <- member
+
+		// get team id
+		assignedTeamId := <-t.LastId
+		member.User.TeamId = assignedTeamId
+	}
+}
+
+func (t *Manager) removeAnonConnection(conn io.Writer) {
 	teamId, userId, userIndex := t.GetIndex(conn)
+	t.RemoveMember(teamId, userId, userIndex)
+}
+
+func (t *Manager) RemoveMember(teamId, userId, userIndex int) {
 
 	if teamId != -1 {
 		// remove user from redis
+		db.Redis.ZRem("global:clients", strconv.Itoa(userId))
+
 		userPointsKey := fmt.Sprintf("uid:%v:points", userId)
 		db.Redis.Del(userPointsKey)
+
 		userTeamKey := fmt.Sprintf("uid:%v:team", userId)
 		db.Redis.Del(userTeamKey)
+
+
 
 		if len(t.Roster[teamId]) <= userIndex {
 			panic("USER NO LONGER IN PROPER INDEX")
 		}
 
+
 		userIdKey := fmt.Sprintf("username:%v:uid", t.Roster[teamId][userIndex].User.Name)
 		db.Redis.Del(userIdKey)
-		usernameKey := fmt.Sprintf("uid:%v:username", t.Roster[teamId][userIndex].User.Name)
+		usernameKey := fmt.Sprintf("uid:%v:username", t.Roster[teamId][userIndex].User.Id)
 		db.Redis.Del(usernameKey)
 
 		// delete user
 		t.Roster[teamId][userIndex] = t.Roster[teamId][len(t.Roster[teamId])-1]
 		t.Roster[teamId] = t.Roster[teamId][0:len(t.Roster[teamId])-1]
+
+
 		
 		// delete user from team
 		teamKey := fmt.Sprintf("team:%v:users", teamId)
@@ -124,11 +131,16 @@ func (t *Manager) removeMember(conn io.Writer) {
 
 		// remove team if empty
 		if len(t.Roster[teamId]) < 1 && len(t.Roster) > 1 {
-			delete(t.Roster, teamId)
-			db.Redis.Del(teamKey)
+			t.removeTeam(teamId)
 			helper.ToXna("collector:destroy", teamId)
 		}
 	}
+}
+
+func (t *Manager) removeTeam(teamId int) {
+	teamKey := fmt.Sprintf("team:%v:users", teamId)
+	delete(t.Roster, teamId)
+	db.Redis.Del(teamKey)
 }
 
 func (t *Manager) addMember(m Member) (teamId int, err error) {
@@ -146,6 +158,7 @@ func (t *Manager) addMember(m Member) (teamId int, err error) {
 	// add user to team list in DB
 	key := fmt.Sprintf("team:%v:users", teamId)
 	db.Redis.SAdd(key, strconv.Itoa(m.User.Id))
+
 	key = fmt.Sprintf("uid:%v:team", m.User.Id)
 	db.Redis.Set(key, strconv.Itoa(teamId))
 
@@ -192,6 +205,38 @@ func (t *Manager) createNewTeam() int {
 }
 
 
+// event objects
+type Merger struct {
+	TeamId1 int `tcp:"team_1"`
+	TeamId2 int `tcp:"team_2"`
+}
+
+func (t *Manager) Merge(teams Merger) {
+	// delete members
+	//defer delete(t.Roster, teams.TeamId1)
+	defer delete(t.Roster, teams.TeamId2)
+
+	//newTeamId := t.createNewTeam()
+
+	//dest 	:= fmt.Sprintf("team:%v:users", newTeamId)
+	team1 	:= fmt.Sprintf("team:%v:users", teams.TeamId1)
+	team2 	:= fmt.Sprintf("team:%v:users", teams.TeamId2)
+	defer db.Redis.Del(team2)
+
+	db.Redis.SUnionStore(team1, team1, team2)
+
+	for _, usr := range db.Redis.SMembers(team1).Val() {
+		teamKey := fmt.Sprintf("uid:%v:team", usr)
+		db.Redis.Set(teamKey, strconv.Itoa(teams.TeamId1))
+
+		id, _ := strconv.Atoi(usr)
+		helper.SendBadge("firstMerge", id)
+	}
+
+	// move members to new team
+	t.Roster[teams.TeamId1] = append(t.Roster[teams.TeamId1], t.Roster[teams.TeamId2]...)
+}
+
 
 // Boot cycle for team manager
 func (t *Manager) Run() {
@@ -206,7 +251,7 @@ func (t *Manager) Run() {
 			t.LastId <- teamId
 		// user has disconnected
 		case deadClient := <-t.Unregister:
-			go t.removeMember(deadClient)
+			go t.removeAnonConnection(deadClient)
 		}
 	}
 }

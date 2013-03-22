@@ -48,6 +48,33 @@ func main() {
 	network.Manager.HandleFunc("collector:merge", onCollectorMerge)
 	network.Manager.HandleFunc("collector:burst", onCollectorBurst)
 
+	// get every client that has been dead for at least 100 seconds...stupid Go precision
+	go func() {
+		ticker := time.NewTicker(5 * time.Second)
+
+		for {
+			select {
+			case <-ticker.C:
+				expired := db.Redis.ZRangeByScore("global:clients", "-inf", strconv.FormatInt(time.Now().Unix() - 10, 10), 0, -1).Val()
+				if len(expired) > 0 {
+					fmt.Printf("EXPIRED USERS: %v\n", expired)
+
+					for _, idStr := range expired {
+						db.Redis.ZRem("global:clients", idStr)
+						id, _ := strconv.Atoi(idStr)
+						teamId, _ := strconv.Atoi(db.Redis.Get("uid:"+idStr+":team").Val())
+						userIndex := teams.GetUserIndex(teamId, id)
+						if (userIndex == -1) {
+							fmt.Printf("[ERROR]\tUser's index out of bounds\n")
+							continue
+						}
+						teams.RemoveMember(teamId, id, userIndex)
+					}
+				}
+			}
+		}
+	}()
+
 	go teams.Run()
 	network.Init()
 }
@@ -73,7 +100,7 @@ func onUserJoin(e events.Event) interface{} {
 	// assign to team
 	member := team.Member{User: u, Conn: e.Sender}
 	teams.Queue <- member
-	// get team id
+	// get team id - blocking
 	assignedTeamId := <-teams.LastId
 	member.User.TeamId = assignedTeamId
 
@@ -256,6 +283,8 @@ func onCollectorBurst(e events.Event) interface{} {
 
 			member.Conn.Write(encoded)
 		}
+
+		teams.ReturnToQueue(c.Id)
 	}
 
 	return nil
