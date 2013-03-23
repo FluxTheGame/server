@@ -89,7 +89,6 @@ func onUserJoin(e events.Event) interface{} {
 	teams.Queue <- member
 	// get team id - blocking
 	assignedTeamId := <-teams.LastId
-	member.User.TeamId = assignedTeamId
 
 	// forward to xna
 	msg := struct {
@@ -102,11 +101,8 @@ func onUserJoin(e events.Event) interface{} {
 
 	helper.SendBadge("join", u.Id)
 
-	// reply to sencha with proper ID
-	return packet.Out{
-		Name:    "user:info",
-		Message: member.User,
-	}
+	// reply to sencha with user data
+	return packet.Out{ "user:info", member.User }
 }
 
 func onUserHeartbeat(e events.Event) interface{} {
@@ -184,14 +180,15 @@ func onCollectorBurst(e events.Event) interface{} {
 	c := collector{}
 	tcp.Unmarshal(e.Args, &c)
 
+	// give points!
 	if team, ok := teams.Roster[c.Id]; ok {
 		pts := c.Points / len(team)
 
 		for _, member := range team {
 			userKey := fmt.Sprintf("uid:%v:points", member.User.Id)
 			helper.SendBadge("firstComplete", member.User.Id)
-			totalPts := db.Redis.IncrBy(userKey, int64(pts))
 			helper.SendPoints(pts, member.User.Id)
+			totalPts := db.Redis.IncrBy(userKey, int64(pts))
 
 			toApp := packet.Out{
 				Name:    "user:getPoints",
