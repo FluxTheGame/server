@@ -1,9 +1,9 @@
 package main
 
 import (
-	"net"
 	"code.google.com/p/go.net/websocket"
 	"fmt"
+	"net"
 	"testing"
 	"time"
 )
@@ -13,7 +13,7 @@ var startedMain bool = false
 func BenchmarkWebSocketConnection(b *testing.B) {
 	b.StopTimer()
 
-	if (!startedMain) {
+	if !startedMain {
 		go main()
 		startedMain = true
 		time.Sleep(100)
@@ -24,7 +24,7 @@ func BenchmarkWebSocketConnection(b *testing.B) {
 
 	b.StartTimer()
 
-	for i:=0; i<b.N; i++ {
+	for i := 0; i < b.N; i++ {
 
 		client, _ := net.Dial("tcp", srvAddr)
 

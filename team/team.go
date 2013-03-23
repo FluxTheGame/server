@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/jahfer/flux-middleman/db"
 	"image/color"
 	"strconv"
+	"time"
 	"math"
 	"fmt"
 	"io"
@@ -96,44 +97,21 @@ func (t *Manager) removeAnonConnection(conn io.Writer) {
 }
 
 func (t *Manager) RemoveMember(teamId, userId, userIndex int) {
-
 	if teamId != -1 {
-		// remove user from redis
-		db.Redis.ZRem("global:clients", strconv.Itoa(userId))
+		// delete user
+		defer func () {
+			t.Roster[teamId][userIndex] = t.Roster[teamId][len(t.Roster[teamId])-1]
+			t.Roster[teamId] = t.Roster[teamId][0:len(t.Roster[teamId])-1]
+		}()
 
-		userPointsKey := fmt.Sprintf("uid:%v:points", userId)
-		db.Redis.Del(userPointsKey)
-
-		userTeamKey := fmt.Sprintf("uid:%v:team", userId)
-		db.Redis.Del(userTeamKey)
-
-
-
-		if len(t.Roster[teamId]) <= userIndex {
-			panic("USER NO LONGER IN PROPER INDEX")
-		}
-
+		t.removeMemberKeys(userId)
 
 		userIdKey := fmt.Sprintf("username:%v:uid", t.Roster[teamId][userIndex].User.Name)
 		db.Redis.Del(userIdKey)
-		usernameKey := fmt.Sprintf("uid:%v:username", t.Roster[teamId][userIndex].User.Id)
-		db.Redis.Del(usernameKey)
 
-		// delete user
-		t.Roster[teamId][userIndex] = t.Roster[teamId][len(t.Roster[teamId])-1]
-		t.Roster[teamId] = t.Roster[teamId][0:len(t.Roster[teamId])-1]
+		t.removeMemberFromTeam(userId, teamId)
 
-
-		
-		// delete user from team
-		teamKey := fmt.Sprintf("team:%v:users", teamId)
-		db.Redis.SRem(teamKey, strconv.Itoa(userId))
-
-		// remove team if empty
-		if len(t.Roster[teamId]) < 1 && len(t.Roster) > 1 {
-			t.removeTeam(teamId)
-			helper.ToXna("collector:destroy", teamId)
-		}
+		helper.ToXna("user:disconnect", userId)
 	}
 }
 
@@ -141,6 +119,29 @@ func (t *Manager) removeTeam(teamId int) {
 	teamKey := fmt.Sprintf("team:%v:users", teamId)
 	delete(t.Roster, teamId)
 	db.Redis.Del(teamKey)
+	helper.ToXna("collector:destroy", teamId)
+}
+
+func (t Manager) removeMemberKeys(userId int) {
+	// remove user from redis
+	db.Redis.ZRem("global:clients", strconv.Itoa(userId))
+
+	uidPrefix := fmt.Sprintf("uid:%v", userId)
+	db.Redis.Del(uidPrefix + ":points")
+	db.Redis.Del(uidPrefix + ":team")
+	db.Redis.Del(uidPrefix + ":badges")
+	db.Redis.Del(uidPrefix + ":username")
+}
+
+func (t *Manager) removeMemberFromTeam(userId, teamId int) {
+	// delete user from team
+	teamKey := fmt.Sprintf("team:%v:users", teamId)
+	db.Redis.SRem(teamKey, strconv.Itoa(userId))
+
+	// remove team if empty
+	if len(t.Roster[teamId]) < 1 {
+		t.removeTeam(teamId)
+	}
 }
 
 func (t *Manager) addMember(m Member) (teamId int, err error) {
@@ -165,6 +166,23 @@ func (t *Manager) addMember(m Member) (teamId int, err error) {
 	return
 }
 
+func (t *Manager) CheckExpired() {
+	expired := db.Redis.ZRangeByScore("global:clients", "-inf", strconv.FormatInt(time.Now().Unix()-10, 10), 0, -1).Val()
+	if len(expired) > 0 {
+		for _, idStr := range expired {
+			db.Redis.ZRem("global:clients", idStr)
+			id, _ := strconv.Atoi(idStr)
+			teamId, _ := strconv.Atoi(db.Redis.Get("uid:" + idStr + ":team").Val())
+			userIndex := t.GetUserIndex(teamId, id)
+			if userIndex == -1 {
+				fmt.Printf("[ERROR]\tUser's index out of bounds\n")
+				continue
+			}
+			t.RemoveMember(teamId, id, userIndex)
+		}
+	}
+}
+
 func (t *Manager) getSmallestTeam() int {
 	smallestSize := 10000
 	var smallestIndex int
@@ -187,9 +205,7 @@ func (t *Manager) createNewTeam() int {
 	if err := get.Err(); err != nil {
 		panic(err)
 	}
-	val, _ := strconv.ParseInt(get.Val(), 10, 0)
-	teamId := int(val)
-
+	teamId, _ := strconv.Atoi(get.Val())
 
 	c := GetNextColor()
 
@@ -213,12 +229,8 @@ type Merger struct {
 
 func (t *Manager) Merge(teams Merger) {
 	// delete members
-	//defer delete(t.Roster, teams.TeamId1)
 	defer delete(t.Roster, teams.TeamId2)
 
-	//newTeamId := t.createNewTeam()
-
-	//dest 	:= fmt.Sprintf("team:%v:users", newTeamId)
 	team1 	:= fmt.Sprintf("team:%v:users", teams.TeamId1)
 	team2 	:= fmt.Sprintf("team:%v:users", teams.TeamId2)
 	defer db.Redis.Del(team2)
@@ -240,8 +252,6 @@ func (t *Manager) Merge(teams Merger) {
 
 // Boot cycle for team manager
 func (t *Manager) Run() {
-
-	t.Roster[0] = []Member{}
 
 	for {
 		select {
