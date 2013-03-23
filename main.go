@@ -9,14 +9,14 @@ import (
 	"bitbucket.org/jahfer/flux-middleman/tcp"
 	"bitbucket.org/jahfer/flux-middleman/team"
 	"bitbucket.org/jahfer/flux-middleman/user"
-	r "github.com/vmihailenco/redis"
 	"encoding/json"
+	"fmt"
+	r "github.com/vmihailenco/redis"
 	"html/template"
 	"net/http"
 	"runtime"
 	"strconv"
 	"time"
-	"fmt"
 )
 
 var teams = team.NewManager()
@@ -36,48 +36,34 @@ func main() {
 
 	network.Manager.HandleFunc("user:new", onUserJoin)
 	network.Manager.HandleFunc("user:touch", onUserTouch)
-	network.Manager.HandleFunc("user:touchEnd", onUserTouchEnd)
-	network.Manager.HandleFunc("user:bloat", onUserBloat)
-	network.Manager.HandleFunc("user:bloatEnd", onUserBloatEnd)
-	network.Manager.HandleFunc("user:pinch", onUserPinch)
-	network.Manager.HandleFunc("user:pinchEnd", onUserPinchEnd)
-	network.Manager.HandleFunc("user:attack", onUserAttack)
 	network.Manager.HandleFunc("user:disconnect", onUserDisconnect)
 	network.Manager.HandleFunc("user:heartbeat", onUserHeartbeat)
+
+	network.Manager.HandleFunc("user:touchEnd", forwardEvent("user:touchEnd"))
+	network.Manager.HandleFunc("user:bloat", forwardEvent("user:bloat"))
+	network.Manager.HandleFunc("user:bloatEnd", forwardEvent("user:bloatEnd"))
+	network.Manager.HandleFunc("user:pinch", forwardEvent("user:pinch"))
+	network.Manager.HandleFunc("user:pinchEnd", forwardEvent("user:pinchEnd"))
+	network.Manager.HandleFunc("user:attack", forwardEvent("user:attack"))
 
 	network.Manager.HandleFunc("collector:merge", onCollectorMerge)
 	network.Manager.HandleFunc("collector:burst", onCollectorBurst)
 
-	// get every client that has been dead for at least 100 seconds...stupid Go precision
-	go func() {
-		ticker := time.NewTicker(5 * time.Second)
-
-		for {
-			select {
-			case <-ticker.C:
-				teams.CheckExpired()
-				/*expired := db.Redis.ZRangeByScore("global:clients", "-inf", strconv.FormatInt(time.Now().Unix()-10, 10), 0, -1).Val()
-				if len(expired) > 0 {
-					fmt.Printf("EXPIRED USERS: %v\n", expired)
-
-					for _, idStr := range expired {
-						db.Redis.ZRem("global:clients", idStr)
-						id, _ := strconv.Atoi(idStr)
-						teamId, _ := strconv.Atoi(db.Redis.Get("uid:" + idStr + ":team").Val())
-						userIndex := teams.GetUserIndex(teamId, id)
-						if userIndex == -1 {
-							fmt.Printf("[ERROR]\tUser's index out of bounds\n")
-							continue
-						}
-						teams.RemoveMember(teamId, id, userIndex)
-					}
-				}*/
-			}
-		}
-	}()
-
 	go teams.Run()
+	go cleanup()
+
 	network.Init()
+}
+
+func cleanup() {
+	ticker := time.NewTicker(5 * time.Second)
+
+	for {
+		select {
+		case <-ticker.C:
+			teams.CheckExpired()
+		}
+	}
 }
 
 func onUserJoin(e events.Event) interface{} {
@@ -163,46 +149,13 @@ func onUserTouch(e events.Event) interface{} {
 	return nil
 }
 
-func onUserTouchEnd(e events.Event) interface{} {
-	u := events.GetUserId(e)
-	// forward to XNA
-	helper.ToXna("user:touchEnd", u.Id)
-	return nil
-}
-
-func onUserBloat(e events.Event) interface{} {
-	u := events.GetUserId(e)
-	// forward to XNA
-	helper.ToXna("user:bloat", u.Id)
-	return nil
-}
-
-func onUserBloatEnd(e events.Event) interface{} {
-	u := events.GetUserId(e)
-	// forward to XNA
-	helper.ToXna("user:bloatEnd", u.Id)
-	return nil
-}
-
-func onUserPinch(e events.Event) interface{} {
-	u := events.GetUserId(e)
-	// forward to XNA
-	helper.ToXna("user:pinch", u.Id)
-	return nil
-}
-
-func onUserPinchEnd(e events.Event) interface{} {
-	u := events.GetUserId(e)
-	// forward to XNA
-	helper.ToXna("user:pinchEnd", u.Id)
-	return nil
-}
-
-func onUserAttack(e events.Event) interface{} {
-	u := events.GetUserId(e)
-	// forward to XNA
-	helper.ToXna("user:attack", u.Id)
-	return nil
+func forwardEvent(evtName string) func(e events.Event) interface{} {
+	return func(e events.Event) interface{} {
+		u := events.GetUserId(e)
+		// forward to XNA
+		helper.ToXna(evtName, u.Id)
+		return nil
+	}
 }
 
 func onCollectorMerge(e events.Event) interface{} {
