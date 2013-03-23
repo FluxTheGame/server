@@ -134,7 +134,7 @@ func initDb() {
 
 	_, err := db.Redis.Pipelined(func(c *r.PipelineClient) {
 	    db.Redis.Set("global:nextUserId", "0")
-	    db.Redis.Set("global:nextTeamId", "1")
+	    db.Redis.Set("global:nextTeamId", "0")
 	})
 
 	if err != nil {

@@ -157,8 +157,6 @@ func forwardEvent(evtName string) func(e events.Event) interface{} {
 func onCollectorMerge(e events.Event) interface{} {
 	// e.g. /name=collector:merge/team_1=0/team_2=1$
 
-	fmt.Printf("%+v\n", e)
-
 	toMerge := team.Merger{}
 	if err := tcp.Unmarshal(e.Args, &toMerge); err != nil {
 		panic(err.Error())

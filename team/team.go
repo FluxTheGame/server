@@ -44,6 +44,11 @@ func (t Manager) NumUsers() (count int) {
 func (t Manager) MaxTeams() int {
 	userCount := float64(t.NumUsers())
 	max := math.Ceil( math.Sqrt(userCount) )
+	
+	if (max < 1) { 
+		return 1 
+	}
+
 	return int(max)
 }
 
@@ -75,21 +80,15 @@ func (t Manager) GetUserIndex(teamId, userId int) int {
 func (t *Manager) ReturnToQueue(teamId int) {
 
 	members := t.Roster[teamId][0:]
-	fmt.Println("Calling removeTeam...")
 	t.removeTeam(teamId)
 
 	for _, member := range members {
-		fmt.Println("Returning to queue...")
-
 		t.Queue <- member
-
-		// get new team id
-		assignedTeamId := <-t.LastId
-		t.memberChangeTeam(member.User.Id, assignedTeamId)
+		newTeamId := <-t.LastId
+		t.memberChangeTeam(member.User.Id, newTeamId)
 	}
 }
 
-// TODO: Not being called?
 func (t *Manager) removeTeam(teamId int) {
 	teamKey := fmt.Sprintf("team:%v:users", teamId)
 	db.Redis.Del(teamKey)
@@ -215,9 +214,6 @@ func (t *Manager) createNewTeam() int {
 	defer db.Redis.Incr("global:nextTeamId")
 
 	get := db.Redis.Get("global:nextTeamId")
-	if err := get.Err(); err != nil {
-		panic(err)
-	}
 	teamId, _ := strconv.Atoi(get.Val())
 
 	c := GetNextColor()
@@ -258,7 +254,11 @@ func (t *Manager) Merge(teams Merger) {
 		db.Redis.Set(teamKey, strconv.Itoa(teams.TeamId1))
 		// tell xna new team id
 		t.memberChangeTeam(userId, teams.TeamId1)
+	}
 
+	// everybody, celebrate merge!
+	for _, idStr := range db.Redis.SMembers(team1).Val() {
+		userId, _ := strconv.Atoi(idStr)
 		helper.SendBadge("firstMerge", userId)
 	}
 
