@@ -5,6 +5,7 @@ import (
 	"bitbucket.org/jahfer/flux-middleman/events"
 	"bitbucket.org/jahfer/flux-middleman/helper"
 	"bitbucket.org/jahfer/flux-middleman/network"
+	"bitbucket.org/jahfer/flux-middleman/client"
 	"bitbucket.org/jahfer/flux-middleman/packet"
 	"bitbucket.org/jahfer/flux-middleman/tcp"
 	"bitbucket.org/jahfer/flux-middleman/team"
@@ -67,7 +68,6 @@ func cleanup() {
 }
 
 func onUserJoin(e events.Event) interface{} {
-
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Printf("[ERROR]\t%v\n", r)
@@ -79,6 +79,8 @@ func onUserJoin(e events.Event) interface{} {
 	if err := json.Unmarshal(e.Args, &u); err != nil {
 		fmt.Printf("[ERROR]\tCould not unmarshal new user. " + err.Error() + "\n")
 	}
+
+	u.Name = client.Sanitizer.ReplaceAllString(u.Name, "")
 
 	if err, err2 := u.Save(); err != nil || err2 != nil {
 		fmt.Printf("[ERROR]\tCould not save user. " + err.Error() + " " + err2.Error() + "\n")

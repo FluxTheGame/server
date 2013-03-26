@@ -113,17 +113,16 @@ func (t Manager) memberChangeTeam(userId, teamId int) {
 
 func (t *Manager) RemoveMember(teamId, userId, userIndex int) {
 	if teamId != -1 {
-		// delete user
-		defer func () {
-			t.Roster[teamId][userIndex] = t.Roster[teamId][len(t.Roster[teamId])-1]
-			t.Roster[teamId] = t.Roster[teamId][0:len(t.Roster[teamId])-1]
 
-			t.removeMemberFromTeam(userId, teamId)
-		}()
+		uName := t.Roster[teamId][userIndex].User.Name
+		
+		t.Roster[teamId][userIndex] = t.Roster[teamId][len(t.Roster[teamId])-1]
+		t.Roster[teamId] = t.Roster[teamId][0:len(t.Roster[teamId])-1]
 
 		t.removeMemberKeys(userId)
+		t.removeMemberFromTeam(userId, teamId)
 
-		userIdKey := fmt.Sprintf("username:%v:uid", t.Roster[teamId][userIndex].User.Name)
+		userIdKey := fmt.Sprintf("username:%v:uid", uName)
 		db.Redis.Del(userIdKey)
 
 		helper.ToXna("user:disconnect", userId)
@@ -149,8 +148,6 @@ func (t *Manager) removeMemberFromTeam(userId, teamId int) {
 	// remove team if empty
 	if len(t.Roster[teamId]) < 1 {
 		t.removeTeam(teamId)
-	} else {
-		fmt.Println(t.Roster[teamId])
 	}
 }
 

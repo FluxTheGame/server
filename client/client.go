@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bitbucket.org/jahfer/flux-middleman/packet"
 	"code.google.com/p/go.net/websocket"
 	"encoding/json"
 	"errors"
@@ -8,8 +9,10 @@ import (
 	"io"
 	"net"
 	"reflect"
-	"bitbucket.org/jahfer/flux-middleman/packet"
+	"regexp"
 )
+
+var Sanitizer = regexp.MustCompile(`(\/|=|\$)`)
 
 type Client interface {
 	// Send data to client
@@ -89,7 +92,10 @@ func (c *TcpClient) reflectValue(v reflect.Value) []byte {
 				key = tv
 			}
 
-			output += fmt.Sprintf("/%s=%v", key, f.Interface())
+			val := fmt.Sprintf("%v", f.Interface())
+			sanitizedVal := Sanitizer.ReplaceAllString(val, "")
+
+			output += fmt.Sprintf("/%s=%v", key, sanitizedVal)
 		}
 		output += "$"//\n
 		return []byte(output)

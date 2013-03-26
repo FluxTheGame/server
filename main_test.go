@@ -25,22 +25,16 @@ func BenchmarkWebSocketConnection(b *testing.B) {
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
-
 		client, _ := net.Dial("tcp", srvAddr)
-
 		conn, _ := websocket.NewClient(config, client)
 
-		//msg := []byte("hello, world\n")
 		msg := []byte(`[{
 			"name": "user:new", 
 			"args": {"id": -1}
 		}]`)
 
 		conn.Write(msg)
-
 		conn.Close()
-
-		time.Sleep(100)
 	}
 }
 
