@@ -49,6 +49,7 @@ func main() {
 
 	network.Manager.HandleFunc("collector:merge", onCollectorMerge)
 	network.Manager.HandleFunc("collector:burst", onCollectorBurst)
+	network.Manager.HandleFunc("collector:heartbeat", onCollectorHeartbeat)
 
 	go teams.Run()
 	go cleanup()
@@ -64,6 +65,15 @@ func cleanup() {
 		case <-ticker.C:
 			teams.CheckExpired()
 		}
+	}
+}
+
+func forwardEvent(evtName string) func(e events.Event) interface{} {
+	return func(e events.Event) interface{} {
+		u := events.GetUserId(e)
+		// forward to XNA
+		helper.ToXna(evtName, u.Id)
+		return nil
 	}
 }
 
@@ -147,13 +157,28 @@ func onUserTouch(e events.Event) interface{} {
 	return nil
 }
 
-func forwardEvent(evtName string) func(e events.Event) interface{} {
-	return func(e events.Event) interface{} {
-		u := events.GetUserId(e)
-		// forward to XNA
-		helper.ToXna(evtName, u.Id)
-		return nil
+
+func onCollectorHeartbeat(e events.Event) interface{} {
+	// e.g. /name=collector:heartbeat/id=0/health=100/capacity=100/fill=0/color=#FFAA99$
+
+	type collector struct {
+		Id     		int	`tcp:"id"`
+		Health 		int `tcp:"health"`
+		Fill		int `tcp:"fill"`
+		Capacity	int `tcp:"capacity"`
+		Color		string `tcp:"color"`
 	}
+	c := collector{}
+	tcp.Unmarshal(e.Args, &c)
+
+	teamPrefix := fmt.Sprintf("team:%v:", c.Id)
+
+	db.Redis.Set(teamPrefix + "health", strconv.Itoa(c.Health))
+	db.Redis.Set(teamPrefix + "fill", strconv.Itoa(c.Fill))
+	db.Redis.Set(teamPrefix + "capacity", strconv.Itoa(c.Capacity))
+	db.Redis.Set(teamPrefix + "color", c.Color)
+
+	return nil
 }
 
 func onCollectorMerge(e events.Event) interface{} {
@@ -173,7 +198,7 @@ func onCollectorBurst(e events.Event) interface{} {
 	// e.g. /name=collector:burst/id=0/points=155$
 
 	type collector struct {
-		Name   string `tcp:"name"`
+		//Name   string `tcp:"name"`
 		Id     int    `tcp:"id"`
 		Points int    `tcp:"points"`
 	}
