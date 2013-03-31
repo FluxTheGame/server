@@ -45,7 +45,7 @@ func main() {
 	network.Manager.HandleFunc("user:bloatEnd", forwardEvent("user:bloatEnd"))
 	network.Manager.HandleFunc("user:pinch", forwardEvent("user:pinch"))
 	network.Manager.HandleFunc("user:pinchEnd", forwardEvent("user:pinchEnd"))
-	network.Manager.HandleFunc("user:attack", forwardEvent("user:attack"))
+	network.Manager.HandleFunc("user:attack", onUserAttack)
 
 	network.Manager.HandleFunc("collector:merge", onCollectorMerge)
 	network.Manager.HandleFunc("collector:burst", onCollectorBurst)
@@ -64,6 +64,7 @@ func cleanup() {
 		select {
 		case <-ticker.C:
 			teams.CheckExpired()
+			teams.Analytics()
 		}
 	}
 }
@@ -75,6 +76,17 @@ func forwardEvent(evtName string) func(e events.Event) interface{} {
 		helper.ToXna(evtName, u.Id)
 		return nil
 	}
+}
+
+func onUserAttack(e events.Event) interface{} {
+	u := events.GetUserId(e)
+
+	userShotKey := fmt.Sprintf("uid:%v:shotsFired", u.Id)
+	db.Redis.Incr(userShotKey)
+
+	// forward to XNA
+	helper.ToXna("user:attack", u.Id)
+	return nil
 }
 
 func onUserJoin(e events.Event) interface{} {

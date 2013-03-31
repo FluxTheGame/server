@@ -138,6 +138,8 @@ func (t Manager) removeMemberKeys(userId int) {
 	db.Redis.Del(uidPrefix + ":team")
 	db.Redis.Del(uidPrefix + ":badges")
 	db.Redis.Del(uidPrefix + ":username")
+	db.Redis.Del(uidPrefix + ":shotsFired")
+	db.Redis.Del(uidPrefix + ":harvests")
 }
 
 func (t *Manager) removeMemberFromTeam(userId, teamId int) {
@@ -161,6 +163,12 @@ func (t *Manager) addMember(m Member) (teamId int, err error) {
 		// add users to existing team
 		t.Roster[smallest] = append(t.Roster[smallest], m)
 		teamId = smallest
+	}
+
+	if len(t.Roster[teamId]) >= 8 {
+		for _, m := range t.Roster[teamId] {
+			helper.SendBadge("theOcho", m.User.Id)
+		}
 	}
 
 	m.User.TeamId = teamId
@@ -188,6 +196,19 @@ func (t *Manager) CheckExpired() {
 				continue
 			}
 			t.RemoveMember(teamId, id, userIndex)
+		}
+	}
+}
+
+func (t Manager) Analytics() {
+	for _, team := range t.Roster {
+		for _, member := range team {
+			userShotKey := fmt.Sprintf("uid:%v:shotsFired", member.User.Id)
+			shotsFired, _ := strconv.Atoi(db.Redis.Get(userShotKey).Val())
+			if shotsFired > 2 {
+				helper.SendBadge("triggerHappy", member.User.Id)
+			}
+			db.Redis.Del(userShotKey)
 		}
 	}
 }
@@ -253,14 +274,19 @@ func (t *Manager) Merge(teams Merger) {
 		t.memberChangeTeam(userId, teams.TeamId1)
 	}
 
+
+	// move members to team 1
+	t.Roster[teams.TeamId1] = append(t.Roster[teams.TeamId1], t.Roster[teams.TeamId2]...)
+
 	// everybody, celebrate merge!
 	for _, idStr := range db.Redis.SMembers(team1).Val() {
 		userId, _ := strconv.Atoi(idStr)
 		helper.SendBadge("firstMerge", userId)
-	}
 
-	// move members to team 1
-	t.Roster[teams.TeamId1] = append(t.Roster[teams.TeamId1], t.Roster[teams.TeamId2]...)
+		if len(t.Roster[teams.TeamId1]) >= 8 {
+			helper.SendBadge("theOcho", userId)
+		}
+	}
 }
 
 // Boot cycle for team manager
