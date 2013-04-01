@@ -210,9 +210,10 @@ func onCollectorBurst(e events.Event) interface{} {
 	// e.g. /name=collector:burst/id=0/points=155$
 
 	type collector struct {
-		//Name   string `tcp:"name"`
-		Id     int    `tcp:"id"`
-		Points int    `tcp:"points"`
+		//Name   	string `tcp:"name"`
+		Id     		int 	`tcp:"id"`
+		Points 		int 	`tcp:"points"`
+		Complete 	int		`tcp:"complete"`
 	}
 	c := collector{}
 	tcp.Unmarshal(e.Args, &c)
@@ -222,9 +223,21 @@ func onCollectorBurst(e events.Event) interface{} {
 		pts := c.Points / len(team)
 
 		for _, member := range team {
-			userKey := fmt.Sprintf("uid:%v:points", member.User.Id)
-			helper.SendBadge("firstComplete", member.User.Id)
+			
+			userHarvestKey := fmt.Sprintf("uid:%v:harvests", member.User.Id)
+
+			if (c.Complete) {
+				helper.SendBadge("firstComplete", member.User.Id)
+				rounds := db.Redis.Incr(userHarvestKey).Val()
+				if (rounds > 3) {
+					helper.SendBadge("bumperCrop", member.User.Id)
+				}
+			} else {
+				db.Redis.Set(userHarvestKey, 0)
+			}
+
 			helper.SendPoints(pts, member.User.Id)
+			userKey := fmt.Sprintf("uid:%v:points", member.User.Id)
 			totalPts := db.Redis.IncrBy(userKey, int64(pts))
 
 			toApp := packet.Out{
