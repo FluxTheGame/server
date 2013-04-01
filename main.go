@@ -226,14 +226,14 @@ func onCollectorBurst(e events.Event) interface{} {
 			
 			userHarvestKey := fmt.Sprintf("uid:%v:harvests", member.User.Id)
 
-			if (c.Complete) {
+			if (c.Complete > 0) {
 				helper.SendBadge("firstComplete", member.User.Id)
 				rounds := db.Redis.Incr(userHarvestKey).Val()
 				if (rounds > 3) {
 					helper.SendBadge("bumperCrop", member.User.Id)
 				}
 			} else {
-				db.Redis.Set(userHarvestKey, 0)
+				db.Redis.Set(userHarvestKey, "0")
 			}
 
 			helper.SendPoints(pts, member.User.Id)
