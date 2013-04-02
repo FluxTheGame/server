@@ -120,7 +120,8 @@ func onUserJoin(e events.Event) interface{} {
 		Id       int    `tcp:"id"`
 		Username string `tcp:"username"`
 		TeamId   int    `tcp:"teamId"`
-	}{"user:new", u.Id, u.Name, assignedTeamId}
+		Display   int    `tcp:"display"`
+	}{"user:new", u.Id, u.Name, assignedTeamId, u.Display}
 	network.TcpClients.Broadcast <- msg
 
 	helper.SendBadge("join", u.Id)
