@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -120,8 +121,8 @@ func onUserJoin(e events.Event) interface{} {
 		Id       int    `tcp:"id"`
 		Username string `tcp:"username"`
 		TeamId   int    `tcp:"teamId"`
-		Display   int    `tcp:"display"`
-	}{"user:new", u.Id, u.Name, assignedTeamId, u.Display}
+		Display  int    `tcp:"display"`
+	}{"user:new", u.Id, strings.ToUpper(u.Name), assignedTeamId, u.Display}
 	network.TcpClients.Broadcast <- msg
 
 	helper.SendBadge("join", u.Id)
