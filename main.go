@@ -114,6 +114,7 @@ func onUserJoin(e events.Event) interface{} {
 	teams.Queue <- member
 	// get team id - blocking
 	assignedTeamId := <-teams.LastId
+	member.User.TeamId = assignedTeamId
 
 	// forward to xna
 	msg := struct {
