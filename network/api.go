@@ -21,9 +21,9 @@ func handleApiCollector(w http.ResponseWriter, r *http.Request) {
 
 	teamPrefix := fmt.Sprintf("team:%v:", teamId)
 
-	_ = db.Redis.Get(teamPrefix + "health")
-	_ = db.Redis.Get(teamPrefix + "fill")
-	_ = db.Redis.Get(teamPrefix + "capacity")
+	health 		:= db.Redis.Get(teamPrefix + "health")
+	fill 		:= db.Redis.Get(teamPrefix + "fill")
+	capacity 	:= db.Redis.Get(teamPrefix + "capacity")
 	teamMembers := db.Redis.SMembers(teamPrefix + "users")
 
 	var users []string
@@ -36,12 +36,12 @@ func handleApiCollector(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("[API:USERNAMES]\t%v\n", users)
 
 	col := struct {
-		Health string `json:"health"`
-		Fill string `json:"fill"`
-		Capacity string `json:"cap"`
-		Team []string `json:"team"`
-		Id string `json:"id"`
-	}{"100","10","100",users,teamId}//{health.Val(), fill.Val(), capacity.Val(), users, teamId}
+		Health 		string 		`json:"health"`
+		Fill 		string 		`json:"fill"`
+		Capacity 	string 		`json:"cap"`
+		Team 		[]string 	`json:"team"`
+		Id 			string 		`json:"id"`
+	}{health.Val(), fill.Val(), capacity.Val(), users, teamId}
 
 	obj := struct {
 		Collector interface{} `json:"collector"`

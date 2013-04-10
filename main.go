@@ -174,7 +174,7 @@ func onUserTouch(e events.Event) interface{} {
 
 
 func onCollectorHeartbeat(e events.Event) interface{} {
-	// e.g. /name=collector:heartbeat/id=0/health=100/capacity=100/fill=0/color=#FFAA99$
+	// e.g. /name=collector:heartbeat/id=0/health=90/capacity=100/fill=43/color=#FFAA99$
 
 	type collector struct {
 		Id     		int	`tcp:"id"`
