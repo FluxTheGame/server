@@ -93,7 +93,7 @@ func onUserAttack(e events.Event) interface{} {
 	msg := struct {
 		Name string `tcp:"name"`
 		Id   int    `tcp:"id"`
-		UserId int 	`tcp:"userId`
+		UserId int 	`tcp:"userId"`
 	}{"collector:attack", teamId, u.Id}
 	network.TcpClients.Broadcast <- msg
 	//helper.ToXna("collector:attack", teamId)
