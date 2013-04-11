@@ -213,7 +213,7 @@ func onCollectorMerge(e events.Event) interface{} {
 }
 
 func onCollectorBurst(e events.Event) interface{} {
-	// e.g. /name=collector:burst/id=0/points=155$
+	// e.g. /name=collector:burst/id=0/points=155/complete=1$
 
 	type collector struct {
 		//Name   	string `tcp:"name"`
@@ -235,7 +235,7 @@ func onCollectorBurst(e events.Event) interface{} {
 			if (c.Complete > 0) {
 				helper.SendBadge("firstComplete", member.User.Id)
 				rounds := db.Redis.Incr(userHarvestKey).Val()
-				if (rounds > 3) {
+				if (rounds >= 3) {
 					helper.SendBadge("bumperCrop", member.User.Id)
 				}
 			} else {

@@ -3,8 +3,10 @@ package team
 import (
 	"bitbucket.org/jahfer/flux-middleman/network"
 	"bitbucket.org/jahfer/flux-middleman/helper"
+	"bitbucket.org/jahfer/flux-middleman/packet"
 	"bitbucket.org/jahfer/flux-middleman/user"
 	"bitbucket.org/jahfer/flux-middleman/db"
+	"encoding/json"
 	"image/color"
 	"strconv"
 	"time"
@@ -85,7 +87,7 @@ func (t *Manager) ReturnToQueue(teamId int) {
 	for _, member := range members {
 		t.Queue <- member
 		newTeamId := <-t.LastId
-		t.memberChangeTeam(member.User.Id, newTeamId)
+		t.memberChangeTeam(member.User.Id, newTeamId, newTeamId)
 	}
 }
 
@@ -101,14 +103,25 @@ func (t *Manager) removeAnonConnection(conn io.Writer) {
 	t.RemoveMember(teamId, userId, userIndex)
 }
 
-func (t Manager) memberChangeTeam(userId, teamId int) {
+func (t Manager) memberChangeTeam(userId, newTeamId, curTeamId int) {
 	msg := struct {
 		Name string `tcp:"name"`
 		Id   int    `tcp:"id"`
 		TeamId   int    `tcp:"teamId"`
-	}{"user:newTeam", userId, teamId}
+	}{"user:newTeam", userId, newTeamId}
 
 	network.TcpClients.Broadcast <- msg
+
+
+	index := t.GetUserIndex(curTeamId, userId)
+
+	toApp := packet.Out{
+		Name:    "user:newTeam",
+		Message: newTeamId,
+	}
+
+	out, _ := json.Marshal(toApp)
+	t.Roster[curTeamId][index].Conn.Write(out)
 }
 
 func (t *Manager) RemoveMember(teamId, userId, userIndex int) {
@@ -271,7 +284,7 @@ func (t *Manager) Merge(teams Merger) {
 		teamKey := fmt.Sprintf("uid:%v:team", userId)
 		db.Redis.Set(teamKey, strconv.Itoa(teams.TeamId1))
 		// tell xna new team id
-		t.memberChangeTeam(userId, teams.TeamId1)
+		t.memberChangeTeam(userId, teams.TeamId1, teams.TeamId2)
 	}
 
 
