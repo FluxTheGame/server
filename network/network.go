@@ -75,7 +75,7 @@ func tcpHandler(conn net.Conn) {
 
 // Start the HTTP/WS server to listen for new connections
 func initSocketServer() {
-	fmt.Println(" -- Initializing WebSocket server on :8080")
+	fmt.Println(" -- Initializing WebSocket server on :80")
 
 	go WsClients.Run()
 
@@ -91,7 +91,7 @@ func initSocketServer() {
 
 	globalInit <- true
 
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	if err := http.ListenAndServe(":80", nil); err != nil {
 		panic("ListenAndServe: " + err.Error())
 	}
 }
