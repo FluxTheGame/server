@@ -85,8 +85,11 @@ func onUserAttack(e events.Event) interface{} {
 	userShotKey := fmt.Sprintf("uid:%v:shotsFired", u.Id)
 	db.Redis.Incr(userShotKey)
 
+	userTeamKey := fmt.Sprintf("uid:%v:team", u.Id)
+	teamId, _ := strconv.Atoi(db.Redis.Get(userTeamKey).Val())
+
 	// forward to XNA
-	helper.ToXna("user:attack", u.Id)
+	helper.ToXna("collector:attack", teamId)
 	return nil
 }
 
