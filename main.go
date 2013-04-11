@@ -52,6 +52,10 @@ func main() {
 	network.Manager.HandleFunc("collector:burst", onCollectorBurst)
 	network.Manager.HandleFunc("collector:heartbeat", onCollectorHeartbeat)
 
+	// from XNA
+	network.Manager.HandleFunc("user:shoot", onUserShoot)
+
+
 	go teams.Run()
 	go cleanup()
 
@@ -82,14 +86,40 @@ func forwardEvent(evtName string) func(e events.Event) interface{} {
 func onUserAttack(e events.Event) interface{} {
 	u := events.GetUserId(e)
 
-	userShotKey := fmt.Sprintf("uid:%v:shotsFired", u.Id)
-	db.Redis.Incr(userShotKey)
-
 	userTeamKey := fmt.Sprintf("uid:%v:team", u.Id)
 	teamId, _ := strconv.Atoi(db.Redis.Get(userTeamKey).Val())
 
 	// forward to XNA
-	helper.ToXna("collector:attack", teamId)
+	msg := struct {
+		Name string `tcp:"name"`
+		Id   int    `tcp:"id"`
+		UserId int 	`tcp:"userId`
+	}{"collector:attack", teamId, u.Id}
+	network.TcpClients.Broadcast <- msg
+	//helper.ToXna("collector:attack", teamId)
+	return nil
+}
+
+func onUserShoot(e events.Event) interface{} {
+	// e.g. /name=user:shoot/id=1$
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("[ERROR]\t%v\n", r)
+		}
+	}()
+	
+	u := struct {
+		Id int `tcp:"id"`
+	}{}
+
+	if err := tcp.Unmarshal(e.Args, &u); err != nil {
+		panic(err.Error())
+	}
+
+	userShotKey := fmt.Sprintf("uid:%v:shotsFired", u.Id)
+	db.Redis.Incr(userShotKey)
+	fmt.Printf("Shots fired!: %v\n", u.Id)
+
 	return nil
 }
 
