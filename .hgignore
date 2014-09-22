@@ -1,7 +1,0 @@
-syntax: glob
-
-*.sublime-project
-*.sublime-workspace
-*.rdb
-
-.DS_Store
